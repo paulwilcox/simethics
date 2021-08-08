@@ -1,7 +1,19 @@
-import bn from './boundNumber.js';
+import bnm from './boundNumberMaker.js';
 
-let time = 0;
+let time = { 
+    previous: null, 
+    current: 0, 
+    change: null,
+    tick: function(increment = 1) {
+        let _current = this.current + increment;
+        this.previous = current;
+        this.current = _current;
+        this.change = this.current - this.previous;
+    }
+};
+
 let world = [];
+let n = bnm(time);
 
 world.push(...[
 
@@ -9,24 +21,30 @@ world.push(...[
     { concept: 'person', keys: ['happiness'] },
     { concept: 'battery', keys: ['energy'] },
 
-    { metal: bn(50,0), rock: bn(100,0) },
-    { metal: bn(25,0), rock: bn(50,0) },
+    { metal: n(50).l(0), rock: n(100).l(0) },
+    { metal: n(25).l(0), rock: n(50).l(0) },
     
-    { name: 'Ariceli', happiness: bn(0,0,100), energy: bn(20,0,100) },
-    { name: 'Aaron', happiness: bn(0,0,100), energy: bn(35,0,100) },
+    { 
+        name: 'Ariceli', 
+        happiness: n(0).l(0).u(100), 
+        energy: n(20).l(0).u(100) 
+    },
+    { 
+        name: 'Aaron', 
+        happiness: n(0).l(0).u(100), 
+        energy: n(35).l(0).u(100) 
+    },
 
-    // Converter: A computer requires 2 parts metal and 1 part energy
-    function computerFactory (mine,battery) {
+    // A computer requires 2 parts metal and 1 part energy
+    // This serves to demonstrate 'conversion'
+    function makeComputers (mine,battery) {
 
         // extract according to the limits of the core equation below
         let metal = mine.metal.extract(battery.energy * 2);
         let energy = battery.energy.extract(mine.metal / 2);
 
         // The core equation.
-        let computers = (metal * 2) + energy; 
-
-        // make the transfers and new objects
-        world.push({ computers: computers });
+        world.push({ computers: (metal * 2) + energy });
 
     }
 

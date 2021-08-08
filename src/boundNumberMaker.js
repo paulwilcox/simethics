@@ -1,8 +1,13 @@
-export default class boundNumber {
+export default function boundNumberMaker(timeRef) {
+    return (num) => new boundNumber(timeRef).setValue(num); 
+}
 
-    constructor(num) {
+class boundNumber {
+
+    constructor(timeRef) {
         
-        this.number = num;
+        this.timeRef = timeRef;
+        this.value = undefined;
         
         // the abolute bounds 
         this.lower = -Infinity;
@@ -13,11 +18,17 @@ export default class boundNumber {
         this.depositRate = Infinity;
 
         // aliases
-        this.l = this.setLower();
-        this.u = this.setUpper();
-        this.er = this.setExtractRate();
-        this.dr = this.setDepositRate();
+        this.v = this.setValue;
+        this.l = this.setLower;
+        this.u = this.setUpper;
+        this.er = this.setExtractRate;
+        this.dr = this.setDepositRate;
 
+    }
+
+    setValue(val) {
+        this.value = val;
+        return this;
     }
 
     setLower(val) {
@@ -34,60 +45,60 @@ export default class boundNumber {
         return this;
     }
 
-    setExtractRate(val) {
-        this.extractRate = val;
+    setExtractRate(val, timeUnits = 1) {
+        this.extractRate = val / timeUnits;
         return this;
     }
 
-    setDepositRate(val) {
-        this.depositRate = val;
+    setDepositRate(val, timeUnits = 1) {
+        this.depositRate = val / timeUnits;
         return this;
     }
 
-    extract(val = Infinity, time) {
+    extract(val = Infinity) {
 
         if (val < 0)
-            return this.deposit(-val, time);
+            return this.deposit(-val, this.timeRef.change);
 
         if (time === undefined)
             throw `The 'time' parameter is required for an extraction.`;
         
         // only allow extraction according to the permitted rate
-        if (val > this.extractRate * time)
-            val = this.extractRate * time;
+        if (val > this.extractRate * this.timeRef.change)
+            val = this.extractRate * this.timeRef.change;
         
         // only allow extraction up to the permitted absolute minimum 
-        if (this.number - val <= this.lower)
-            val = this.number - this.lower;
+        if (this.value - val <= this.lower)
+            val = this.value - this.lower;
 
-        this.number -+ this.val;
+        this.value -+ this.val;
         return val;
 
     }
 
-    deposit(val = Infinity, time) {
+    deposit(val = Infinity) {
 
         if (val < 0)
-            return this.extract(-val, time);
+            return this.extract(-val, this.timeRef.change);
 
         if (time === undefined)
             throw `The 'time' parameter is required for a deposit.`;
         
         let excess = 0;
 
-        if (val > this.depositRate * time) {
-            _val = this.depositRate * time;
+        if (val > this.depositRate * this.timeRef.change) {
+            _val = this.depositRate * this.timeRef.change;
             excess += val - _val;
             val = _val;
         }
 
-        if (this.number + val >= this.upper) {
-            let _val = this.upper - this.number;
+        if (this.value + val >= this.upper) {
+            let _val = this.upper - this.value;
             excess += val - _val;
             val = _val;
         }
 
-        this.number += val;
+        this.value += val;
         return excess;
 
     }
