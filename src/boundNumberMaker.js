@@ -27,6 +27,10 @@ class boundNumber {
     }
 
     setValue(val) {
+        if (val < this.lower)
+            throw `Cannot set value to ${val} because lower is ${this.lower}`;
+        if (val > this.upper)
+            throw `Cannot set value to ${val} because upper is ${this.upper}`;
         this.value = val;
         return this;
     }
@@ -34,6 +38,8 @@ class boundNumber {
     setLower(val) {
         if (val > this.upper) 
             throw `Cannot set lower to ${val} because upper is ${this.upper}`;
+        if (val > this.value)
+            throw `Cannot set lower to ${val} because value is ${this.value}`;
         this.lower = val;
         return this;
     }
@@ -41,6 +47,8 @@ class boundNumber {
     setUpper(val) {
         if (val < this.lower)
             throw `Cannot set upper to ${val} because lower is ${this.lower}`;
+        if (val < this.value)
+            throw `Cannot set upper to ${val} because value is ${this.value}`;
         this.upper = val;
         return this;
     }
