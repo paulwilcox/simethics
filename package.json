@@ -1,0 +1,15 @@
+{
+  "name": "simethics",
+  "version": "0.0.0",
+  "description": "Miscelaneous attempts to simulate ethical phenomena",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "ethics",
+    "simulation"
+  ],
+  "author": "Paul Wilcox",
+  "license": "ISC"
+}
