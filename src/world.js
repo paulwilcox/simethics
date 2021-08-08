@@ -7,28 +7,28 @@ world.push(...[
 
     { concept: 'mine', keys: ['metal','rock'] },
     { concept: 'person', keys: ['happiness'] },
-    { concept: 'energy', keys: ['energy'] },
+    { concept: 'battery', keys: ['energy'] },
 
-    { metal: bn(50,0), rock: 100 },
-    { metal: bn(25,0), rock: 50 },
+    { metal: bn(50,0), rock: bn(100,0) },
+    { metal: bn(25,0), rock: bn(50,0) },
     
-    { name: 'Ariceli', happiness: 0, energy: bn(20,0,100) },
-    { name: 'Aaron', happiness: 0, energy: bn(35,0,100) },
+    { name: 'Ariceli', happiness: bn(0,0,100), energy: bn(20,0,100) },
+    { name: 'Aaron', happiness: bn(0,0,100), energy: bn(35,0,100) },
 
     // Converter: A computer requires 2 parts metal and 1 part energy
-    { func: (mine,energy) => {
+    function computerFactory (mine,battery) {
 
         // extract according to the limits of the core equation below
-        let _metal = mine.metal.extract(energy.energy * 2);
-        let _energy = energy.energy.extract(mine.metal / 2);
+        let metal = mine.metal.extract(battery.energy * 2);
+        let energy = battery.energy.extract(mine.metal / 2);
 
         // The core equation.
-        let computers = (_metal * 2) + _energy; 
+        let computers = (metal * 2) + energy; 
 
         // make the transfers and new objects
         world.push({ computers: computers });
 
-    }}
+    }
 
 ]);
 
