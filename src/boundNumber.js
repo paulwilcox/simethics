@@ -2,16 +2,24 @@ export default class boundNumber {
 
     constructor(num, lower, upper) {
         this.number = num;
-        this.lower = lower === undefined ? lower : -Infinity;
-        this.upper = upper === undefined ? upper : Infinity;
+        this.lower = -Infinity;
+        this.upper = Infinity;
+        if (this.lower !== undefined)
+            this.setLower(lower);
+        if(this.upper !== undefined)
+            this.setUpper(upper);
     }
 
-    lower(val) {
+    setLower(val) {
+        if (val > this.upper) 
+            throw `Cannot set lower to ${val} because upper is ${this.upper}`;
         this.lower = val;
         return this;
     }
 
-    upper(val) {
+    setUpper(val) {
+        if (val < this.lower)
+            throw `Cannot set upper to ${val} because lower is ${this.lower}`;
         this.upper = val;
         return this;
     }
