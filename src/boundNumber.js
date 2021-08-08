@@ -46,6 +46,9 @@ export default class boundNumber {
 
     extract(val = Infinity, time) {
 
+        if (val < 0)
+            return this.deposit(-val, time);
+
         if (time === undefined)
             throw `The 'time' parameter is required for an extraction.`;
         
@@ -63,6 +66,9 @@ export default class boundNumber {
     }
 
     deposit(val = Infinity, time) {
+
+        if (val < 0)
+            return this.extract(-val, time);
 
         if (time === undefined)
             throw `The 'time' parameter is required for a deposit.`;
