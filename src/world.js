@@ -32,28 +32,30 @@ world.push(...[
     },
 
     // world will be recursed.  
-    // input/output objects will be identified
-    // inputs and outputs will 'catch' other world objects
+    // world objects will be 'caught' based on properties
     // the objects will be processed according to the throughput
     { 
         name: 'industry',
-        inputs: {
+        catch: {
             mine: ['metal','rock'],
-            battery: 'energy'
-        },
-        outputs: {
+            battery: 'energy',
             person: 'happiness'
         },
         throughput: (mine,battery,person) => {
 
-            let possibleImprovement = person.happiness.upper - person.happiness.value;
-
-            // max metal due to improvement cap: metal = (posi - energy) / 2
-            // max energy due to improvement cap: energy = posi - (metal * 2)
+            // max amount happiness can improve
+            let hapPossImprov = person.happiness.upper - person.happiness.value;
 
             // extract according to the limits of the core equation below
-            let metal = mine.metal.extract(battery.energy * 2);
-            let energy = battery.energy.extract(mine.metal / 2);
+            let metal = mine.metal.extract(Math.min(
+                battery.energy.value * 2, // max posible due to energy bottleneck
+                (hapPossImprov - battery.energy.value) / 2 // max possible due to happinees cap 
+            ));
+            
+            let energy = battery.energy.extract(Math.min(
+                mine.metal.value / 2, // max possible due to metal bottleneck
+                hapPossImprov - (mine.metal.value * 2) // max possible due to happiness cap
+            ));
 
             // The core equation.
             person.happiness.deposit((metal * 2) + energy);
@@ -63,7 +65,23 @@ world.push(...[
 
 ]);
 
+/*
 
-for(let member of world) {
+    - A tree representation may be unavoidable.
+    - Is there an algorithm to get all possibe constraints?
 
-}
+    & (
+        = (
+            + (
+                *(metal.t0,2),
+                energy.t0
+            ),
+            happiness.t1
+        },
+        metal.t1 >= 0,
+        energy.t1 >= 0,
+        happiness.t1 <= 100
+    )
+
+
+*/
