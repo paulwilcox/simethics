@@ -11,5 +11,8 @@
     "simulation"
   ],
   "author": "Paul Wilcox",
-  "license": "ISC"
+  "license": "ISC",
+  "dependencies": {
+    "mathjs": "^9.4.4"
+  }
 }

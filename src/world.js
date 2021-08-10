@@ -65,23 +65,3 @@ world.push(...[
 
 ]);
 
-/*
-
-    - A tree representation may be unavoidable.
-    - Is there an algorithm to get all possibe constraints?
-
-    & (
-        = (
-            + (
-                *(metal.t0,2),
-                energy.t0
-            ),
-            happiness.t1
-        },
-        metal.t1 >= 0,
-        energy.t1 >= 0,
-        happiness.t1 <= 100
-    )
-
-
-*/
