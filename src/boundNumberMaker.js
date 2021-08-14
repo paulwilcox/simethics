@@ -1,4 +1,4 @@
-export default function boundNumberMaker(timeRef) {
+module.exports = function boundNumberMaker(timeRef) {
     return (num) => new boundNumber(timeRef).setValue(num); 
 }
 

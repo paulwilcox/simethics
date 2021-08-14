@@ -1,4 +1,5 @@
-import bnm from './boundNumberMaker.js';
+let bnm = require('./boundNumberMaker.js');
+let algebra = require('algebra.js');
 
 let time = { 
     previous: null, 
@@ -65,3 +66,15 @@ world.push(...[
 
 ]);
 
+
+var expr = new algebra.Expression("x");
+expr = expr.subtract(3);
+expr = expr.add("x");
+
+var exprY = new algebra.Expression("y");
+
+var eq = new algebra.Equation(expr, exprY);
+
+var x = eq.solveFor("x");
+
+console.log("x = " + x.toString());

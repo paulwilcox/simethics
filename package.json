@@ -13,6 +13,6 @@
   "author": "Paul Wilcox",
   "license": "ISC",
   "dependencies": {
-    "mathjs": "^9.4.4"
+    "algebra.js": "^0.2.6"
   }
 }
