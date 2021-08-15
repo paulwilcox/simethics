@@ -66,6 +66,50 @@ world.push(...[
 
 ]);
 
+/*
+
+Core equation:
+
+    happiness := metal * 2 + energy
+
+    - I use ':=' to signify directionality.  
+    - Happiness is the target
+    - Metal and energy are the sources.
+
+'Captured' entities:
+
+    - Target: Person (because it has happiness)
+    - Source: Mine (because it has metal)
+    - Source: Battery (because it has energy)
+
+Equation output must be between what target entity can loose and what it can accept:
+
+    prsHappiness - prsHappinessMin <= happiness <= prsHappinessMax - prsHappiness
+
+Equation input coefficients must be between what source entities can accept or loose:
+
+    mineMetalMax - mineMetal <= metal <= mineMetal - mineMetalMin  
+    batEnergyMax - batEnergy <= energy <= batEnergy - batEnergyMin
+
+    - Note that the direction changes between target bounds and source bounds
+
+Bottlenecks:
+
+    These have to be met:
+        
+        metal = energy * 2 
+        energy = metal / 2
+
+    Here, the 'motivator' is happiness, which want's to maximize.  Let's call
+    metal and energy neutral in motivation for these purposes.  So if happiness
+    want's to maximize, metal and energy are at it's service.  So:
+
+        mineMetal <= batEnergyMax * 2
+        batEnergy <= mineMetalMax / 2
+
+    
+
+*/
 
 var expr = new algebra.Expression("x");
 expr = expr.subtract(3);
