@@ -68,6 +68,10 @@ world.push(...[
 
 /*
 
+TODO: With respect to the bottlenecks ...
+    - Consider two targets, 
+    - Consider three sources
+
 Core equation:
 
     happiness := metal * 2 + energy
@@ -100,14 +104,13 @@ Bottlenecks:
         metal = energy * 2 
         energy = metal / 2
 
-    Here, the 'motivator' is happiness, which want's to maximize.  Let's call
-    metal and energy neutral in motivation for these purposes.  So if happiness
-    want's to maximize, metal and energy are at it's service.  So:
+    Here, the 'motivator' is happiness.  Let's call metal and energy neutral in motivation 
+    for these purposes.  So if happiness want's to maximize, metal and energy are at it's 
+    service.  So, take the boundaries processed above and narrow them further where 
+    necessary:
 
-        mineMetal <= batEnergyMax * 2
-        batEnergy <= mineMetalMax / 2
-
-    
+        batEnergyMin * 2 <= mineMetal <= batEnergyMax * 2
+        mineMetalMax / 2 <= batEnergy <= mineMetalMax / 2
 
 */
 
