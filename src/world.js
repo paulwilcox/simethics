@@ -30,47 +30,31 @@ world.push(...[
         name: 'Aaron', 
         happiness: n(0).l(0).u(100), 
         energy: n(35).l(0).u(100).er(5) 
-    },
-
-    // world will be recursed.  
-    // world objects will be 'caught' based on properties
-    // the objects will be processed according to the throughput
-    { 
-        name: 'industry',
-        catch: {
-            mine: ['metal','rock'],
-            battery: 'energy',
-            person: 'happiness'
-        },
-        throughput: (mine,battery,person) => {
-
-            // max amount happiness can improve
-            let hapPossImprov = person.happiness.upper - person.happiness.value;
-
-            // extract according to the limits of the core equation below
-            let metal = mine.metal.extract(Math.min(
-                battery.energy.value * 2, // max posible due to energy bottleneck
-                (hapPossImprov - battery.energy.value) / 2 // max possible due to happinees cap 
-            ));
-            
-            let energy = battery.energy.extract(Math.min(
-                mine.metal.value / 2, // max possible due to metal bottleneck
-                hapPossImprov - (mine.metal.value * 2) // max possible due to happiness cap
-            ));
-
-            // The core equation.
-            person.happiness.deposit((metal * 2) + energy);
-
-        }
     }
 
 ]);
 
+let equation = algebra.parse('metal * 2 + energy = happiness + zero');
+
+
+console.log(
+    equation.solveFor('zero').toString()
+);
+
+return;
+
 /*
+
+Problem: 
+    - I don't think I"m on the right track.  What if the 
+      equation were parabolic or sinusoidal. Then the 
+      extremes of metal and energy will not be where the
+      boundaries are broken. 
 
 TODO: With respect to the bottlenecks ...
     - Consider two targets, 
     - Consider three sources
+    - Consider same substance in both source and target
 
 Core equation:
 
@@ -113,15 +97,3 @@ Bottlenecks:
         mineMetalMax / 2 <= batEnergy <= mineMetalMax / 2
 
 */
-
-var expr = new algebra.Expression("x");
-expr = expr.subtract(3);
-expr = expr.add("x");
-
-var exprY = new algebra.Expression("y");
-
-var eq = new algebra.Equation(expr, exprY);
-
-var x = eq.solveFor("x");
-
-console.log("x = " + x.toString());
