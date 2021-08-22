@@ -34,7 +34,7 @@ world.push(...[
 
 ]);
 
-let equation = algebra.parse('(2/t)^2 + 2*(5/t) = 100');
+let equation = algebra.parse('(2*t)^2 + 2*(5*t) = 0');
 console.log(
     equation.solveFor('t').toString()
 )
@@ -51,59 +51,58 @@ return;
     'The naive equations.'
     'Not considering boundary conditions.'
 
-        metal.extract(t)      = metal.er / t
-                              = 2/t
+        metal.extract(t)      = metal.er * t
+                              = 2*t
 
-        energy.extract(t)     = energy.er / t
-                              = 5/t
+        energy.extract(t)     = energy.er * t
+                              = 5*t
 
         metal.remain(t)       = metal(0) - metal.extract(t)    
-                              = 50 - 2/t
+                              = 50 - 2*t
         
         energy.remain(t)      = energy(0) - energy.extract(t)  
-                              = 20 - 5/t
+                              = 20 - 5*t
 
         happiness.deposit(t)  = metal.extract(t)^2 + 2*energy.extract(t)
-                              = (2/t)^2 + 2*(5/t)
+                              = (2*t)^2 + 2*(5*t)
 
         happiness.remain(t)   = happiness(0) + happiness.deposit(t)
-                              = 0 + (2/t)^2 + 2*(5/t)
+                              = 0 + (2*t)^2 + 2*(5*t)
 
 ------------------------
 
     'Which element will reach its limit first?'
 
-        metal(t) = metal.min
-        50 - 2/t  = 0
-        -2/t      = -50
-        t         = 25
-                          
-        energy(t) = energy.min
-        20 - 5/t  =  0
-        -5/t      =  -20
-        t         =  4
-
-        happiness(t) = happiness.min
-        (2/t)^2 + 2*(5/t) = 0
-        www.mathpapa.com/algebra-calculator.html -> google
-            | t = 0.02975949514
-            | t = 0.05291767021
-
+        metal.remain(t) = metal.min
+        50 - 2*t        = 0
+        -2*t            = -50
+        t               = 25
+        
+        energy.remain(t) = energy.min
+        20 - 5*t         = 0
+        -5*t             = -20
+        t                = 4
+        
+        happiness(t)      = happiness.min
+        (2*t)^2 + 2*(5*t) = 0
+        t                 = -2.5 or 0 'from algebra.equation.solveFor'
+        
         happiness(t) = happiness.max
-        (2/t)^2 + 2*(5/t) = 100
-        www.mathpapa.com/algebra-calculator.html -> google
-            | t = 0.02845621373
-            | t = 0.05760936003
+        (2*t)^2 + 2*(5*t) = 100
+        t                 = -6.40388 or 3.90388 'from algebra.equation.solveFor'
 
-    'lowest of all these is 0.02845621373'
+    'Lowest t of all these is negative.'
+    'But time will never be negative, so we can discard it.'
 
-        'The idea would be to choose this as t and increment only this amount of time.' 
+    'Lowest non-negative is 0.'
+    'But 0 is okay, just < 0 is not.  We start at 0 and go up so we're good.'
+    'Lowest after that is 3.90388, where happiness hits 100.'
 
-        'But, whoops, this is not right.'
-        'How can happiness reach it's lower bound at t > 0?'
-
-        'The problem is that I set happiness to equal to the value'
-        'of the metal in the mine, which decreases over time.'
-        'I need to do the extracted metal, which increases over time.'
+    'So 3.90388, is the next event.'
+    'We would tick t by 3.90388, remove this object from being "catchable", and repeat the process.'
+    
+    'One task is to be able to identify when an equation solution'
+    'hits a boundary but does not exceed it.'
+    
 
 */
