@@ -34,13 +34,10 @@ world.push(...[
 
 ]);
 
-let happiness = n(0).l(0).u(100);
-let metal = n(50).l(0).er(2);
-let energy = n(20).l(0).er(5);
-
-let metalEq = algebra.parse('50 - 2/t');
-
-let equation = algebra.parse('metal^2 + 2*energy = happiness + zero');
+let equation = algebra.parse('(50 - 2/t)^2 + 2*(20 - 5/t) = 100');
+console.log(
+    equation.solveFor('t').toString()
+)
 
 
 return;
@@ -66,91 +63,39 @@ return;
 
 ------------------------
 
-    'metal(t) needs to be split over conditionals'
+    'Which element will reach its limit first?'
 
-        metal(t) = 50 - 2/t  : metal.min <= _metal(t) <= metal.max '_metal(t) is the uncontitioned'
-                   metal.min : _metal(t) < metal.min
-                   metal.max : _metal(t) > metal.max
-
-                = 50 - 2/t   : 0 <= 50 - 2/t  'metal.max is infinite'
-                  0          : 50 - 2/t < 0
-
-    'When does _metal(t) hit the boundary?'
-
-        _metal(t) = metal.min
+        metal(t) = metal.min
         50 - 2/t  = 0
         -2/t      = -50
         t         = 25
-        
-        '
-            Only one solution. 
-            _metal(0) = 50, which is inbounds
-            _metal(25) = 0, which is where it crosses the border.
-            so ...
-        '
-
-    'the conditionals can now be expressed in terms of t
-
-        metal(t) = 50 - 2/t  :  t <= 25
-                   0         :  t > 25
-
-
------------------------
-
-    'repeat for energy'
-
-        energy(t) = 20 - 5/t  :  0 <= 20 - 5/t
-                  = 0         :  20 - 5 / t < 0
-                  
-        _energy(t) = energy.min
+                          
+        energy(t) = energy.min
         20 - 5/t  =  0
         -5/t      =  -20
         t         =  4
 
-        energy(t) = 20 - 5/t  :  t <= 4
-                    0         :  t > 4
+        happiness(t) = happiness.min
+        (50 - 2/t)^2 + 2*(20 - 5/t) = 0
+        www.mathpapa.com/algebra-calculator.html -> google
+            | t = 0.02975949514
+            | t = 0.05291767021
 
------------------------
+        happiness(t) = happiness.max
+        (50 - 2/t)^2 + 2*(20 - 5/t) = 100
+        www.mathpapa.com/algebra-calculator.html -> google
+            | t = 0.02845621373
+            | t = 0.05760936003
 
-    'Things are different for happiness, beause it has'
-    'its own constraints and inherits those of metal'
-    'and energy.'
+    'lowest of all these is 0.02845621373'
 
-        happiness(t) = 
+        'The idea would be to choose this as t and increment only this amount of time.' 
 
-            happiness.value + metal(t)^2 + 2*energy(t) :     metal.min <= metal(t) <= metal.max
-                                                           & energy.min <= energy(t) <= energy.max
-                                                           & happiness.min <= happiness(t) <= happines.max
+        'But, whoops, this is not right.'
+        'How can happiness reach it's lower bound at t > 0?'
 
-            happiness.value + metal.min^2 + 2.energy(t) :    metal(t) < metal.min
-                                                           & energy.min <= energy(t) <= energy.max
-                                                           & happiness.min <= happiness(t) <= happines.max
-
-            happiness.value + metal.max^2 + 2.energy(t) :    metal(t) > metal.max
-                                                           & energy.min <= energy(t) <= energy.max
-                                                           & happiness.min <= happiness(t) <= happines.max
-            ... energy too low
-            ... energy too high
-            ... happiness too low
-            ... happiness too high
-
-            ... metal too low and energy too low
-            ... metal too low and energy too high
-            ... metal too high and energy too low
-            ... metal too high and energy too high
-
-            ... repeat for metal and happiness (4 lines)
-            ... repeat for energy and happiness (4 lines)
-            
-            ... metal too low and energy too low and happiness too low
-            ... metal too low and energy too low and happiness too high
-            ... metal too low and energy too high and happiness too low
-            ... metal too low and energy too high and happiness too high
-
-            ... repeat for metal too high and energy and happiness (4 lines)
-
-            'thats 27 lines'
-            '3^3, due to 3 variables'
-            'Just 5^5 would be 3125 lines!'
+        'The problem is that I set happiness to equal to the value'
+        'of the metal in the mine, which decreases over time.'
+        'I need to do the extracted metal, which increases over time.'
 
 */
