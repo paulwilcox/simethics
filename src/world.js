@@ -34,7 +34,7 @@ world.push(...[
 
 ]);
 
-let equation = algebra.parse('(50 - 2/t)^2 + 2*(20 - 5/t) = 100');
+let equation = algebra.parse('(2/t)^2 + 2*(5/t) = 100');
 console.log(
     equation.solveFor('t').toString()
 )
@@ -49,17 +49,25 @@ return;
         happiness <- metal^2 + 2*energy
 
     'The naive equations.'
-    'Accounting for time and original state.'
     'Not considering boundary conditions.'
 
-        metal(t)      = metal.value - metal.er / t    
-                      = 50 - 2/t
-        
-        energy(t)     = energy.value - energy.er / t  
-                      = 20 - 5/t
+        metal.extract(t)      = metal.er / t
+                              = 2/t
 
-        happiness(t)  = happiness.value + metal(t)^2 + 2*energy(t)
-                      = (50 - 2/t)^2 + 2*(20 - 5/t)
+        energy.extract(t)     = energy.er / t
+                              = 5/t
+
+        metal.remain(t)       = metal(0) - metal.extract(t)    
+                              = 50 - 2/t
+        
+        energy.remain(t)      = energy(0) - energy.extract(t)  
+                              = 20 - 5/t
+
+        happiness.deposit(t)  = metal.extract(t)^2 + 2*energy.extract(t)
+                              = (2/t)^2 + 2*(5/t)
+
+        happiness.remain(t)   = happiness(0) + happiness.deposit(t)
+                              = 0 + (2/t)^2 + 2*(5/t)
 
 ------------------------
 
@@ -76,13 +84,13 @@ return;
         t         =  4
 
         happiness(t) = happiness.min
-        (50 - 2/t)^2 + 2*(20 - 5/t) = 0
+        (2/t)^2 + 2*(5/t) = 0
         www.mathpapa.com/algebra-calculator.html -> google
             | t = 0.02975949514
             | t = 0.05291767021
 
         happiness(t) = happiness.max
-        (50 - 2/t)^2 + 2*(20 - 5/t) = 100
+        (2/t)^2 + 2*(5/t) = 100
         www.mathpapa.com/algebra-calculator.html -> google
             | t = 0.02845621373
             | t = 0.05760936003
