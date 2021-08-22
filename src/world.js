@@ -47,7 +47,13 @@ return;
 
 /*
 
-    'The naive equations, not considering boundary conditions'
+    'what a user would plug in'
+
+        happiness <- metal^2 + 2*energy
+
+    'The naive equations.'
+    'Accounting for time and original state.'
+    'Not considering boundary conditions.'
 
         metal(t)      = metal.value - metal.er / t    
                       = 50 - 2/t
@@ -55,7 +61,7 @@ return;
         energy(t)     = energy.value - energy.er / t  
                       = 20 - 5/t
 
-        happiness(t)  = metal(t)^2 + 2*energy(t)
+        happiness(t)  = happiness.value + metal(t)^2 + 2*energy(t)
                       = (50 - 2/t)^2 + 2*(20 - 5/t)
 
 ------------------------
@@ -106,6 +112,45 @@ return;
 
 -----------------------
 
+    'Things are different for happiness, beause it has'
+    'its own constraints and inherits those of metal'
+    'and energy.'
 
+        happiness(t) = 
+
+            happiness.value + metal(t)^2 + 2*energy(t) :     metal.min <= metal(t) <= metal.max
+                                                           & energy.min <= energy(t) <= energy.max
+                                                           & happiness.min <= happiness(t) <= happines.max
+
+            happiness.value + metal.min^2 + 2.energy(t) :    metal(t) < metal.min
+                                                           & energy.min <= energy(t) <= energy.max
+                                                           & happiness.min <= happiness(t) <= happines.max
+
+            happiness.value + metal.max^2 + 2.energy(t) :    metal(t) > metal.max
+                                                           & energy.min <= energy(t) <= energy.max
+                                                           & happiness.min <= happiness(t) <= happines.max
+            ... energy too low
+            ... energy too high
+            ... happiness too low
+            ... happiness too high
+
+            ... metal too low and energy too low
+            ... metal too low and energy too high
+            ... metal too high and energy too low
+            ... metal too high and energy too high
+
+            ... repeat for metal and happiness (4 lines)
+            ... repeat for energy and happiness (4 lines)
+            
+            ... metal too low and energy too low and happiness too low
+            ... metal too low and energy too low and happiness too high
+            ... metal too low and energy too high and happiness too low
+            ... metal too low and energy too high and happiness too high
+
+            ... repeat for metal too high and energy and happiness (4 lines)
+
+            'thats 27 lines'
+            '3^3, due to 3 variables'
+            'Just 5^5 would be 3125 lines!'
 
 */
