@@ -37,11 +37,14 @@ world.push(...[
 
 ]);
 
-let result = nerdamer('(2*t)^2 + 2*(5*t) = 0').solveFor('x');
-console.log(result.toString()); // 0 'bad bad bad'
+let solutions = 
+    nerdamer('(2*t)^2 + 2*(5*t) = 100')
+    .solveFor('x')
+    .map(solution => parseFloat(nerdamer(solution).evaluate().toDecimal()));
 
-result = nerdamer('(2*t)^2 + 2*(5*t) = 0').solveFor('t');
-console.log(result.toString()); // 0,-5/2 'good'
+
+console.log(solutions); 
+// Empty array.  Way better.  
 
 /*
 let equation = algebra.parse('(2*t)^2 + 2*(5*t) = 0');
