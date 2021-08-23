@@ -37,14 +37,27 @@ world.push(...[
 
 ]);
 
+
+
 let solutions = 
     nerdamer('(2*t)^2 + 2*(5*t) = 100')
-    .solveFor('x')
+    .solveFor('t')
     .map(solution => parseFloat(nerdamer(solution).evaluate().toDecimal()));
 
-
 console.log(solutions); 
-// Empty array.  Way better.  
+
+let derivative = '(2*t)^2 + 2*(5*t)';
+derivative = `diff( ${derivative}, t )`;
+derivative = nerdamer(derivative);
+
+let derivatives = solutions
+    .map(solution => parseFloat(derivative.evaluate({t: solution}).toDecimal()))
+
+console.log(derivatives);
+
+//nerdamer('diff( (2*t)^2 + 2*(5*t), t )');
+
+
 
 /*
 let equation = algebra.parse('(2*t)^2 + 2*(5*t) = 0');
