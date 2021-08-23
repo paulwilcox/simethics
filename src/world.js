@@ -1,5 +1,8 @@
 let bnm = require('./boundNumberMaker.js');
-let algebra = require('algebra.js');
+let nerdamer = require('nerdamer');
+require('../node_modules/nerdamer/Algebra.js');
+require('../node_modules/nerdamer/Calculus.js');
+require('../node_modules/nerdamer/Solve.js');
 
 let time = { 
     previous: null, 
@@ -34,13 +37,19 @@ world.push(...[
 
 ]);
 
+let result = nerdamer('(2*t)^2 + 2*(5*t) = 0').solveFor('x');
+console.log(result.toString()); // 0 'bad bad bad'
+
+result = nerdamer('(2*t)^2 + 2*(5*t) = 0').solveFor('t');
+console.log(result.toString()); // 0,-5/2 'good'
+
+/*
 let equation = algebra.parse('(2*t)^2 + 2*(5*t) = 0');
 console.log(
     equation.solveFor('t').toString()
 )
+*/
 
-
-return;
 
 /*
 
