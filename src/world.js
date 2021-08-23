@@ -38,33 +38,21 @@ world.push(...[
 ]);
 
 
+let timeExpression = '(2*t)^2 + 2*(5*t)';
+let boundary = 100;
+
+let derivative = nerdamer(`diff( ${timeExpression}, t )`);
 
 let solutions = 
-    nerdamer('(2*t)^2 + 2*(5*t) = 100')
+    nerdamer(`${timeExpression} = ${boundary}`)
     .solveFor('t')
-    .map(solution => parseFloat(nerdamer(solution).evaluate().toDecimal()));
+    .map(solution => parseFloat(nerdamer(solution).evaluate().toDecimal()))
+    .map(solution => ({
+        solution,
+        derivative: parseFloat(derivative.evaluate({t: solution}).toDecimal())
+    }));
 
 console.log(solutions); 
-
-let derivative = '(2*t)^2 + 2*(5*t)';
-derivative = `diff( ${derivative}, t )`;
-derivative = nerdamer(derivative);
-
-let derivatives = solutions
-    .map(solution => parseFloat(derivative.evaluate({t: solution}).toDecimal()))
-
-console.log(derivatives);
-
-//nerdamer('diff( (2*t)^2 + 2*(5*t), t )');
-
-
-
-/*
-let equation = algebra.parse('(2*t)^2 + 2*(5*t) = 0');
-console.log(
-    equation.solveFor('t').toString()
-)
-*/
 
 
 /*
