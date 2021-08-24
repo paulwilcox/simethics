@@ -40,17 +40,23 @@ world.push(...[
 
 let timeExpression = '(2*t)^2 + 2*(5*t)';
 let boundary = 100;
+let boundaryType = 'max';
 
 let derivative = nerdamer(`diff( ${timeExpression}, t )`);
 
 let solutions = 
     nerdamer(`${timeExpression} = ${boundary}`)
     .solveFor('t')
-    .map(solution => parseFloat(nerdamer(solution).evaluate().toDecimal()))
-    .map(solution => ({
-        solution,
-        derivative: parseFloat(derivative.evaluate({t: solution}).toDecimal())
-    }));
+    .map(solved => {
+        let _ = {};
+        _.solution = nerdamer(solved).evaluate();
+        _.derivative = derivative.evaluate({t: _.solution});
+        _.solution = parseFloat(_.solution.toDecimal());
+        _.derivative = parseFloat(_.derivative.toDecimal());
+        // as in: does it escape the bounds?
+        _.isEscape = boundaryType == 'min' ? _.derivative < 0 : _.derivative > 0; 
+        return _;
+    });
 
 console.log(solutions); 
 
