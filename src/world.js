@@ -38,27 +38,35 @@ world.push(...[
 ]);
 
 
-let timeExpression = '(2*t)^2 + 2*(5*t)';
-let boundary = 100;
-let boundaryType = 'max';
+function getBoundaryTimes (
+    timeExpression, // the time (t) based expression
+    boundary, // the constraint value
+    boundaryType // 'min' or 'max'
+) {
 
-let derivative = nerdamer(`diff( ${timeExpression}, t )`);
+    let derivative = nerdamer(`diff( ${timeExpression}, t )`);
 
-let solutions = 
-    nerdamer(`${timeExpression} = ${boundary}`)
-    .solveFor('t')
-    .map(solved => {
-        let _ = {};
-        _.solution = nerdamer(solved).evaluate();
-        _.derivative = derivative.evaluate({t: _.solution});
-        _.solution = parseFloat(_.solution.toDecimal());
-        _.derivative = parseFloat(_.derivative.toDecimal());
-        // as in: does it escape the bounds?
-        _.isEscape = boundaryType == 'min' ? _.derivative < 0 : _.derivative > 0; 
-        return _;
-    });
+    return nerdamer(`${timeExpression} = ${boundary}`)
+        .solveFor('t')
+        .map(solved => {
+            let _ = {};
+            _.equation = `${timeExpression} = ${boundary}`,
+            _.t = nerdamer(solved).evaluate();
+            _.derivative = derivative.evaluate({t: _.t});
+            _.t = parseFloat(_.t.toDecimal());
+            _.derivative = parseFloat(_.derivative.toDecimal());
+            // as in: does it escape the bounds?
+            _.isEscape = boundaryType == 'min' ? _.derivative < 0 : _.derivative > 0; 
+            return _;
+        });
 
-console.log(solutions); 
+}
+
+console.log(
+    getBoundaryTimes(
+        timeExpression = '(2*t)^2 + 2*(5*t)', 100, 'max'    
+    )
+); 
 
 
 /*
