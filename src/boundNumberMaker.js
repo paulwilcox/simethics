@@ -13,6 +13,12 @@ class boundNumber {
 
     }
 
+    getFlowResultFunc (
+        direction // '+' or '-'
+    ) {
+        return `${this.value} ${direction} ${this.flowRate}`; 
+    }
+
     // aliases
     v(val) { this.setValue(val); return this; }
     l(val) { this.setLower(val); return this; }
