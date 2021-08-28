@@ -4,25 +4,20 @@ module.exports = function boundNumberMaker(timeRef) {
 
 class boundNumber {
 
-    constructor(timeRef) {
+    constructor() {
         
-        this.timeRef = timeRef;
         this.value = undefined;
-        
-        // the absolute bounds 
         this.lower = -Infinity;
         this.upper = Infinity;
+        this.flowRate = null; // e.g. '5t'
 
-        // the bounds per unit of time
-        this.flowRate = null; // 5/t 
-
-        // aliases
-        this.v = this.setValue;
-        this.l = this.setLower;
-        this.u = this.setUpper;
-        this.f = this.setFlowRate;
-        
     }
+
+    // aliases
+    v(val) { this.setValue(val); return this; }
+    l(val) { this.setLower(val); return this; }
+    u(val) { this.setUpper(val); return this; }
+    f(val) { this.setFlowRate(val); return this; }
 
     setValue(val) {
         if (val < this.lower)
