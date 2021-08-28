@@ -33,9 +33,47 @@ world.push(...[
         name: 'Aaron', 
         happiness: n(0).l(0).u(100), 
         energy: n(35).l(0).u(100).er(5) 
-    }
+    }, 
+
+    { name: 'dummy' }
 
 ]);
+
+function catchFromFunc(func) {
+
+    let [ sources, targets ] = 
+        func.includes('<-') ? func.split('<-').reverse()
+        : func.includes('->') ? func.split('->')
+        : null;
+
+    let propFinder = /[A-Z,a-z,_]+/g;
+    let props = [
+        ...sources.match(propFinder).map(prop => ({ type: 'source', prop: prop})),
+        ...targets.match(propFinder).map(prop => ({ type: 'target', prop: prop})),
+    ];
+
+    let caughts = new Set();
+
+    for (let p of props)
+    for (let w of world) 
+        if (w[p.prop] !== undefined)
+            caughts.add({ 
+                ...p, 
+                caught: w, 
+                value: w[p.prop].value,
+                lower: w[p.prop].lower,
+                upper: w[p.prop].upper
+            });
+
+    return caughts;
+
+}
+
+console.log(
+    catchFromFunc('happiness <- metal^2 + 2*energy')
+);
+
+return;
 
 
 function getBoundaryTimes (
