@@ -9,21 +9,19 @@ class boundNumber {
         this.timeRef = timeRef;
         this.value = undefined;
         
-        // the abolute bounds 
+        // the absolute bounds 
         this.lower = -Infinity;
         this.upper = Infinity;
 
         // the bounds per unit of time
-        this.extractRate = Infinity;
-        this.depositRate = Infinity;
+        this.flowRate = null; // 5/t 
 
         // aliases
         this.v = this.setValue;
         this.l = this.setLower;
         this.u = this.setUpper;
-        this.er = this.setExtractRate;
-        this.dr = this.setDepositRate;
-
+        this.f = this.setFlowRate;
+        
     }
 
     setValue(val) {
@@ -53,62 +51,9 @@ class boundNumber {
         return this;
     }
 
-    setExtractRate(val, timeUnits = 1) {
-        this.extractRate = val / timeUnits;
+    setFlowRate(fimeFunc) {
+        this.flowRate = timeFunc;
         return this;
-    }
-
-    setDepositRate(val, timeUnits = 1) {
-        this.depositRate = val / timeUnits;
-        return this;
-    }
-
-    extract(val = Infinity) {
-
-        if (val < 0)
-            return this.deposit(-val, this.timeRef.change);
-
-        if (time === undefined)
-            throw `The 'time' parameter is required for an extraction.`;
-        
-        // only allow extraction according to the permitted rate
-        if (val > this.extractRate * this.timeRef.change)
-            val = this.extractRate * this.timeRef.change;
-        
-        // only allow extraction up to the permitted absolute minimum 
-        if (this.value - val <= this.lower)
-            val = this.value - this.lower;
-
-        this.value -+ this.val;
-        return val;
-
-    }
-
-    deposit(val = Infinity) {
-
-        if (val < 0)
-            return this.extract(-val, this.timeRef.change);
-
-        if (time === undefined)
-            throw `The 'time' parameter is required for a deposit.`;
-        
-        let excess = 0;
-
-        if (val > this.depositRate * this.timeRef.change) {
-            _val = this.depositRate * this.timeRef.change;
-            excess += val - _val;
-            val = _val;
-        }
-
-        if (this.value + val >= this.upper) {
-            let _val = this.upper - this.value;
-            excess += val - _val;
-            val = _val;
-        }
-
-        this.value += val;
-        return excess;
-
     }
 
 }

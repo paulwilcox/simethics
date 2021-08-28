@@ -21,18 +21,18 @@ let n = bnm(time);
 
 world.push(...[
 
-    { metal: n(50).l(0).er(2), rock: n(100).l(0) },
-    { metal: n(25).l(0).er(2), rock: n(50).l(0) },
+    { metal: n(50).l(0).f('2t'), rock: n(100).l(0) },
+    { metal: n(25).l(0).f('2t'), rock: n(50).l(0) },
     
     { 
         name: 'Ariceli', 
         happiness: n(0).l(0).u(100), 
-        energy: n(20).l(0).u(100).er(5) 
+        energy: n(20).l(0).u(100).f('5t') 
     },
     { 
         name: 'Aaron', 
         happiness: n(0).l(0).u(100), 
-        energy: n(35).l(0).u(100).er(5) 
+        energy: n(35).l(0).u(100).f('5t') 
     }, 
 
     { name: 'dummy' }
@@ -48,30 +48,37 @@ function catchFromFunc(func) {
 
     let propFinder = /[A-Z,a-z,_]+/g;
     let props = [
-        ...sources.match(propFinder).map(prop => ({ type: 'source', prop: prop})),
-        ...targets.match(propFinder).map(prop => ({ type: 'target', prop: prop})),
+        ...sources.match(propFinder).map(propName => ({ type: 'source', propName })),
+        ...targets.match(propFinder).map(propName => ({ type: 'target', propName }))
     ];
 
     let caughts = new Set();
 
     for (let p of props)
     for (let w of world) 
-        if (w[p.prop] !== undefined)
+        if (w[p.propName] !== undefined)
             caughts.add({ 
                 ...p, 
                 caught: w, 
-                value: w[p.prop].value,
-                lower: w[p.prop].lower,
-                upper: w[p.prop].upper
+                prop: w[p.propName]
             });
 
     return caughts;
 
 }
 
-console.log(
-    catchFromFunc('happiness <- metal^2 + 2*energy')
-);
+let func = 'happiness <- metal^2 + 2*energy';
+
+let caughts = catchFromFunc(func);
+
+// next task is to put all funcs in terms of time
+let timeFuncs = 
+    caughts.map(c => ({
+        propName,
+
+    }));
+
+console.log(timeFuncs);
 
 return;
 
