@@ -71,15 +71,23 @@ let func = 'happiness <- metal^2 + 2*energy';
 
 let caughts = catchFromFunc(func);
 
-// next task is to put all funcs in terms of time
-let propNames = new Set([...caughts].map(c => c.propName));
-
-// not yet, we have to replace items with time func equivalents
-let equation = nerdamer(func.replace(/<-|->/, '=')); 
+// I think it's going to be important to better apply a '+' or '-' to 
+// a propName.  That's may be hard if the '-' isn't right next to the
+// variable name.  So we may have to require the negative be right next
+// to the variable or a special function name be used to identify 
+// deposit or extraction.  So '3(-x)' or '3ext(x)' instead of just '-3x'. 
+// This may also help with the issue about side of the equation.  So 
+// instead of 'y <- x' indicating extract from x and deposit into y, 
+// maybe we do 'dep(y) <- ext(x)'.  It's ugly, but may be more workabble.
 
 let result = 
-    propNames
-    .map(pn => equation.solveFor(pn));
+    caughts
+    .map(c => ({
+        ...c,
+        flowRate = 
+            c.caught.flowRate === undefined ? ''
+            c.type c.caught.flowRate
+    }))
 
 console.log(result);
 
