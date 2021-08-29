@@ -72,13 +72,16 @@ let func = 'happiness <- metal^2 + 2*energy';
 let caughts = catchFromFunc(func);
 
 // next task is to put all funcs in terms of time
-let timeFuncs = 
-    caughts.map(c => ({
-        propName,
+let propNames = new Set([...caughts].map(c => c.propName));
 
-    }));
+// not yet, we have to replace items with time func equivalents
+let equation = nerdamer(func.replace(/<-|->/, '=')); 
 
-console.log(timeFuncs);
+let result = 
+    propNames
+    .map(pn => equation.solveFor(pn));
+
+console.log(result);
 
 return;
 

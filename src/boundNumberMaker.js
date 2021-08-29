@@ -52,10 +52,13 @@ class boundNumber {
         return this;
     }
 
-    setFlowRate(fimeFunc) {
+    setFlowRate(timeFunc) {
         this.flowRate = timeFunc;
         return this;
     }
 
+    get [Symbol.toStringTag]() {
+        return `${this.lower} <= ${this.value} <= ${this.upper}; ${this.flowRate}`;
+    }
 }
 
