@@ -67,10 +67,7 @@ function catchFromFunc(func) {
 
 }
 
-// But the comment below may not even work.  Notice that 'dep'
-// is wrapping happiness, as required, but what we really need
-// is for 2*happiness to be deposited.   
-let func = '2*dep(happiness) <- ext(metal)^2 + 2*ext(energy)';
+let func = '2*happiness <- metal^2 + 2*energy';
 
 let caughts = catchFromFunc(func);
 
@@ -78,10 +75,15 @@ let caughts = catchFromFunc(func);
 // a propName.  That's may be hard if the '-' isn't right next to the
 // variable name.  So we may have to require the negative be right next
 // to the variable or a special function name be used to identify 
-// deposit or extraction.  So '3(-x)' or '3ext(x)' instead of just '-3x'. 
-// This may also help with the issue about side of the equation.  So 
-// instead of 'y <- x' indicating extract from x and deposit into y, 
-// maybe we do 'dep(y) <- ext(x)'.  It's ugly, but may be more workabble.
+// deposit or extraction.  So '3(-x)' or '3ext(x)' instead of just '-3x'.
+//
+// But the pure math may work itself out.  
+// -2x = y
+// x = -y/2
+// If y is positive, x would be negative, and so you would extract from x
+//
+// Pausing on the above note and focus on getting time funcs.  Just 
+// assume extraction of sources and deposits into targets.
 
 let result = 
     caughts
