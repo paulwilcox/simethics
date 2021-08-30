@@ -5,12 +5,10 @@ module.exports = function boundNumberMaker(timeRef) {
 class boundNumber {
 
     constructor() {
-        
         this.value = undefined;
         this.lower = -Infinity;
         this.upper = Infinity;
-        this.flowRate = null; // e.g. '5t'
-
+        this.flowRate = undefined; // e.g. '5t'
     }
 
     getFlowResultFunc (
@@ -57,8 +55,8 @@ class boundNumber {
         return this;
     }
 
-    get [Symbol.toStringTag]() {
-        return `${this.lower} <= ${this.value} <= ${this.upper}; ${this.flowRate}`;
-    }
 }
+
+boundNumber.prototype.toString = function() { return ''; }
+
 

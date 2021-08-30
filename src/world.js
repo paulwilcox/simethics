@@ -59,8 +59,8 @@ function catchFromFunc(func) {
         if (w[p.propName] !== undefined)
             caughts.add({ 
                 ...p, 
-                caught: w, 
-                prop: w[p.propName]
+                getCaughtObj: () => w, 
+                getCaughtProp: () => w[p.propName]
             });
 
     return caughts;
@@ -86,15 +86,20 @@ let caughts = catchFromFunc(func);
 // assume extraction of sources and deposits into targets.
 
 let result = 
-    caughts
-    .map(c => ({
-        ...c,
-        flowRate = 
-              c.caught.flowRate === undefined ? ''
-            : c.type == 'source' ? c.caught.flowRate
-            : c.type == 'target' ? -c.caught.flowRate
-            : null
-    }))
+    [...caughts]
+    .map(c => {
+
+        let remainFunc = c.getCaughtProp().value.toString();
+        
+        if (c.getCaughtProp().flowRate !== undefined)
+            if (c.type == 'source') 
+                remainFunc += ' + ' + c.getCaughtProp().flowRate;
+            else if (c.type == 'target') 
+                remainFunc += ' - ' + c.getCaughtProp().flowRate;
+        
+        return { ...c, remainFunc };
+
+    });
 
 console.log(result);
 
