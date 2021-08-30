@@ -89,15 +89,21 @@ let result =
     [...caughts]
     .map(c => {
 
-        let remainFunc = c.getCaughtProp().value.toString();
+        let prop = c.getCaughtProp();
+
+        let flowFunc = prop.flowRate;
+        if (flowFunc === undefined)
+            flowFunc = prop.value; // happiness shows this may be an issue
         
-        if (c.getCaughtProp().flowRate !== undefined)
+        let remainFunc = prop.value.toString();
+        
+        if (prop.flowRate !== undefined)
             if (c.type == 'source') 
-                remainFunc += ' + ' + c.getCaughtProp().flowRate;
+                remainFunc += ' - ' + prop.flowRate;
             else if (c.type == 'target') 
-                remainFunc += ' - ' + c.getCaughtProp().flowRate;
+                remainFunc += ' + ' + prop.flowRate;
         
-        return { ...c, remainFunc };
+        return { ...c, flowFunc, remainFunc };
 
     });
 
