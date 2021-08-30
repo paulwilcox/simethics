@@ -67,7 +67,10 @@ function catchFromFunc(func) {
 
 }
 
-let func = 'happiness <- metal^2 + 2*energy';
+// But the comment below may not even work.  Notice that 'dep'
+// is wrapping happiness, as required, but what we really need
+// is for 2*happiness to be deposited.   
+let func = '2*dep(happiness) <- ext(metal)^2 + 2*ext(energy)';
 
 let caughts = catchFromFunc(func);
 
@@ -85,8 +88,10 @@ let result =
     .map(c => ({
         ...c,
         flowRate = 
-            c.caught.flowRate === undefined ? ''
-            c.type c.caught.flowRate
+              c.caught.flowRate === undefined ? ''
+            : c.type == 'source' ? c.caught.flowRate
+            : c.type == 'target' ? -c.caught.flowRate
+            : null
     }))
 
 console.log(result);
