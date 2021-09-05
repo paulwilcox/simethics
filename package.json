@@ -13,6 +13,7 @@
   "author": "Paul Wilcox",
   "license": "ISC",
   "dependencies": {
+    "fluent-data": "^5.1.0",
     "nerdamer": "^1.1.12"
   }
 }
