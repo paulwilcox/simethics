@@ -1,5 +1,6 @@
 let bnm = require('./boundNumberMaker.js');
 let nerdamer = require('nerdamer');
+let fd = require('fluent-data');
 require('../node_modules/nerdamer/Algebra.js');
 require('../node_modules/nerdamer/Calculus.js');
 require('../node_modules/nerdamer/Solve.js');
@@ -102,7 +103,30 @@ for (let c of caughts) {
 
 };
 
-console.log(caughts);
+// When substituting time equations for properties, you'll
+// want to take care of the flow funcs of each caught item
+// seperately.
+//
+// Still to be done is taking care of happiness, which doesn't
+// have a flow rate of '0'.  Rather, it's of it's value.  But
+// it is cocrrect that it is independent of time.
+let flowFuncsBySourceAndProp =  
+    fd(caughts)
+    .group(c => ({ 
+        type: c.type, 
+        propName: c.propName, 
+        flowFunc: c.flowFunc 
+    }))
+    .reduce(({
+        type: fd.first(c => c.type),
+        propName: fd.first(c => c.propName),
+        flowFunc: (agg,next) => agg == '' ? next.flowFunc : agg += ' + ' + next.flowFunc,
+        ['flowFunc.seed']: '' 
+    }))
+    .map(red => ({ ...red, flowFunc: `(${red.flowFunc})`}))
+    .get();
+
+
 
 return;
 
