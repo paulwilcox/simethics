@@ -110,6 +110,9 @@ for (let c of caughts) {
 // Still to be done is taking care of happiness, which doesn't
 // have a flow rate of '0'.  Rather, it's of it's value.  But
 // it is cocrrect that it is independent of time.
+// 
+// Nevermind.  The value of happiness is '0'.  So it's flow
+// func cannot be the value.  
 let flowFuncsBySourceAndProp =  
     fd(caughts)
     .group(c => ({ 
