@@ -85,29 +85,24 @@ let caughts = catchFromFunc(func);
 // Pausing on the above note and focus on getting time funcs.  Just 
 // assume extraction of sources and deposits into targets.
 
-let result = 
-    [...caughts]
-    .map(c => {
+// Maybe it only ever makes sense to have a 'remainFunc' for sources.
+// The 'remainFunc' for targets gets considered at a later step.
 
-        let prop = c.getCaughtProp();
+for (let c of caughts) {
 
-        let flowFunc = prop.flowRate;
-        if (flowFunc === undefined)
-            flowFunc = prop.value; // happiness shows this may be an issue
-        
-        let remainFunc = prop.value.toString();
-        
-        if (prop.flowRate !== undefined)
-            if (c.type == 'source') 
-                remainFunc += ' - ' + prop.flowRate;
-            else if (c.type == 'target') 
-                remainFunc += ' + ' + prop.flowRate;
-        
-        return { ...c, flowFunc, remainFunc };
+    let prop = c.getCaughtProp();
 
-    });
+    c.flowFunc = prop.flowRate || prop.value.toString();
+    
+    if (c.type == 'source') {
+        c.remainFunc = prop.value.toString();        
+        if (prop.flowRate !== undefined) 
+            c.remainFunc += ' - ' + prop.flowRate;
+    }
 
-console.log(result);
+};
+
+console.log(caughts);
 
 return;
 
