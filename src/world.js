@@ -178,10 +178,14 @@ function _catchFromFunc_applyTimeSubstitutions (caughts) {
 
         let boundaryTimes = [];
 
-        // I feel like one of the strategies below is not corret.  
-        // Is it the case that the reamin func is appropriate for 
-        // sources and the time func for targets? 
+        // Seems like the equation bottlenecks are wrong.  In particular,
+        // seems like it's wrong to compare it to lower and upper of 
+        // the original property.  
+        // 
+        // I think in getting to this point I've lost track of the original
+        // purpose.  Will revisit.
 
+        // boundaries imposed by equation bottlenecks
         boundaryTimes.push(...c.timeFuncs.map(tf => 
             getBoundaryTimes(tf, c.getCaughtProp().lower, 'min')
         ));
@@ -189,6 +193,7 @@ function _catchFromFunc_applyTimeSubstitutions (caughts) {
             getBoundaryTimes(tf, c.getCaughtProp().upper, 'max')
         ));
 
+        // boundaries imposed by the giving object
         if (c.remainFunc) {
             boundaryTimes.push(
                 ...getBoundaryTimes(c.remainFunc, c.getCaughtProp().lower, 'min')
