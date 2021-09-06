@@ -159,6 +159,16 @@ function _catchFromFunc_applyTimeSubstitutions (caughts) {
 // back to deciding which one to use.  And I return to my instinct
 // of first finding the minimum boundary break for all of them, and
 // then choosing the one with the latest break.  
+// 
+// Another, safer, possibillity is to take the minimum boundary crossings
+// and then, of those, select the minimum that is still feasible.  
+// Time increments less but if the element doesn't hit its boundary then
+// time will just continue incrementing.
+// 
+// I think I'm going to choose the first solution because I want to see
+// this break if it's not good.  But I"ll keep the second safer solution
+// in mind.  Also I know I need a better think-through of the justification
+// in general.
 let _temp = nerdamer(c.timeSubstitutions).solveFor(c.propName)
 console.log({ 
     ts: c.timeSubstitutions, 
@@ -182,6 +192,7 @@ throw 'stop'
         c._minTimes = minTimes; // temp just to peek
 
     }
+
 }
 
 // (metal + 2t)^2 + 2*(5t + 5t) = 2*(10t + 10t) 
