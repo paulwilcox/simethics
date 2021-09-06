@@ -150,46 +150,55 @@ function _catchFromFunc_applyTimeSubstitutions (caughts) {
 
         c.timeSubstitutions = `${_sources} = ${_targets}`;
 
-// Problem.  We can have more than one solution for time.
-// My instinct here is to take the earliest boundary times for each,
-// and then only consider the equation which, of those, has the latest time.
-// But I can't articulate a justification right now.
-//
-// Duh, it's the fact that it's a quadradic equation.  So it goes
-// back to deciding which one to use.  And I return to my instinct
-// of first finding the minimum boundary break for all of them, and
-// then choosing the one with the latest break.  
-// 
-// Another, safer, possibillity is to take the minimum boundary crossings
-// and then, of those, select the minimum that is still feasible.  
-// Time increments less but if the element doesn't hit its boundary then
-// time will just continue incrementing.
-// 
-// I think I'm going to choose the first solution because I want to see
-// this break if it's not good.  But I"ll keep the second safer solution
-// in mind.  Also I know I need a better think-through of the justification
-// in general.
-let _temp = nerdamer(c.timeSubstitutions).solveFor(c.propName)
-console.log({ 
-    ts: c.timeSubstitutions, 
-    solutions: _temp.map(t => `${c.propName} = ${t}`) 
-});
-throw 'stop'
-
-        c.timeFunc = 
+        // Problem.  We can have more than one solution for time.
+        // My instinct here is to take the earliest boundary times for each,
+        // and then only consider the equation which, of those, has the latest time.
+        // But I can't articulate a justification right now.
+        //
+        // Duh, it's the fact that it's a quadradic equation.  So it goes
+        // back to deciding which one to use.  And I return to my instinct
+        // of first finding the minimum boundary break for all of them, and
+        // then choosing the one with the latest break.  
+        // 
+        // Another, safer, possibillity is to take the minimum boundary crossings
+        // and then, of those, select the minimum that is still feasible.  
+        // Time increments less but if the element doesn't hit its boundary then
+        // time will just continue incrementing.
+        // 
+        // I think I'm going to choose the first solution because I want to see
+        // this break if it's not good.  But I"ll keep the second safer solution
+        // in mind.  Also I know I need a better think-through of the justification
+        // in general.
+        c.timeFuncs = 
             nerdamer(c.timeSubstitutions)
             .solveFor(c.propName)
             .toString();
 
         // TODO: apply getBoundaryTimes to 'inTermsOf' and 'remainFunc' for max and mins.
 
-        let minTimes = getBoundaryTimes(
-            c.timeFunc,
-            c.getCaughtProp().lower,
-            'min'
-        );
+        let boundaryTimes = [];
 
-        c._minTimes = minTimes; // temp just to peek
+        // I feel like one of the strategies below is not corret.  
+        // Is it the case that the reamin func is appropriate for 
+        // sources and the time func for targets? 
+
+        boundaryTimes.push(...c.timeFuncs.map(tf => 
+            getBoundaryTimes(tf, c.getCaughtProp().lower, 'min')
+        ));
+        boundaryTimes.push(...c.timeFuncs.map(tf => 
+            getBoundaryTimes(tf, c.getCaughtProp().upper, 'max')
+        ));
+
+        if (c.remainFunc) {
+            boundaryTimes.push(
+                ...getBoundaryTimes(c.remainFunc, c.getCaughtProp().lower, 'min')
+            );
+            boundaryTimes.push(
+                ...getBoundaryTimes(c.remainFunc, c.getCaughtProp().upper, 'max')
+            );
+        }
+
+        c.peek = boundaryTimes; // temp just to peek
 
     }
 
