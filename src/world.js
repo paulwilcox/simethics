@@ -140,21 +140,46 @@ function _catchFromFunc_applyTimeSubstitutions (caughts) {
             })) 
             .get();
 
-        for (let timeSub of timeSubstitutions) 
+        for (let timeSub of timeSubstitutions) {
+            let propRx = new RegExp(timeSub.propName,'ig');
             if (timeSub.type == 'source')
-                _sources = _sources.replace(timeSub.propName, timeSub.part);
+                _sources = _sources.replace(propRx, timeSub.part);
             else if (timeSub.type == 'target')
-                _targets = _targets.replace(timeSub.propName, timeSub.part);
+                _targets = _targets.replace(propRx, timeSub.part);
+        }
 
         c.timeSubstitutions = `${_sources} = ${_targets}`;
-        c.inTermsOf = nerdamer(c.timeSubstitutions).solveFor(c.propName);
-        c.inTermsOfStr = c.inTermsOf.toString();
+
+// Problem.  We can have more than one solution for time.
+// My instinct here is to take the earliest boundary times for each,
+// anc then only consider the equation which, of those, has the latest time.
+// But I can't articulate a justification right now.
+let _temp = nerdamer(c.timeSubstitutions).solveFor(c.propName)
+console.log({ 
+    ts: c.timeSubstitutions, 
+    solutions: _temp.map(t => t.toString()) 
+});
+throw 'stop'
+
+        c.timeFunc = 
+            nerdamer(c.timeSubstitutions)
+            .solveFor(c.propName)
+            .toString();
+
+        // TODO: apply getBoundaryTimes to 'inTermsOf' and 'remainFunc' for max and mins.
+
+        let minTimes = getBoundaryTimes(
+            c.timeFunc,
+            c.getCaughtProp().lower,
+            'min'
+        );
+
+        c._minTimes = minTimes; // temp just to peek
 
     }
 }
 
 
-/*
 
 function getBoundaryTimes (
     timeExpression, // the time (t) based expression
@@ -180,6 +205,7 @@ function getBoundaryTimes (
 
 }
 
+/*
 console.log(
     getBoundaryTimes(
         timeExpression = '(2*t)^2 + 2*(5*t)', 100, 'max'    
