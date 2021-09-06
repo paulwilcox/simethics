@@ -154,6 +154,10 @@ function _catchFromFunc_applyTimeSubstitutions (caughts) {
 // My instinct here is to take the earliest boundary times for each,
 // anc then only consider the equation which, of those, has the latest time.
 // But I can't articulate a justification right now.
+//
+// What's going through my head w/ respect to avove are images of 
+// graphs where functions work for both negative and positive.  But we 
+// simply disregard one because it doesn't make sense for the situation. 
 let _temp = nerdamer(c.timeSubstitutions).solveFor(c.propName)
 console.log({ 
     ts: c.timeSubstitutions, 
