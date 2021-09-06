@@ -152,12 +152,13 @@ function _catchFromFunc_applyTimeSubstitutions (caughts) {
 
 // Problem.  We can have more than one solution for time.
 // My instinct here is to take the earliest boundary times for each,
-// anc then only consider the equation which, of those, has the latest time.
+// and then only consider the equation which, of those, has the latest time.
 // But I can't articulate a justification right now.
 //
-// What's going through my head w/ respect to avove are images of 
-// graphs where functions work for both negative and positive.  But we 
-// simply disregard one because it doesn't make sense for the situation. 
+// On deeper thought, my instinct kept telling me that there really should
+// be only one solution.  Now I see that it's the happiness value being
+// zero.  I think using the value in time-independence situations is the 
+// wrong way to handle it.
 let _temp = nerdamer(c.timeSubstitutions).solveFor(c.propName)
 console.log({ 
     ts: c.timeSubstitutions, 
