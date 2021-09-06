@@ -27,12 +27,12 @@ world.push(...[
     
     { 
         name: 'Ariceli', 
-        happiness: n(0).l(0).u(100), 
+        happiness: n(0).l(0).u(100).f('10t'), 
         energy: n(20).l(0).u(100).f('5t') 
     },
     { 
         name: 'Aaron', 
-        happiness: n(0).l(0).u(100), 
+        happiness: n(0).l(0).u(100).f('10t'), 
         energy: n(35).l(0).u(100).f('5t') 
     }, 
 
@@ -155,14 +155,12 @@ function _catchFromFunc_applyTimeSubstitutions (caughts) {
 // and then only consider the equation which, of those, has the latest time.
 // But I can't articulate a justification right now.
 //
-// On deeper thought, my instinct kept telling me that there really should
-// be only one solution.  Now I see that it's the happiness value being
-// zero.  I think using the value in time-independence situations is the 
-// wrong way to handle it.
+// Actualy giving happiness a flow rate did not resolve the problem.
+// So it's not happiness = 0 and independent of time that is the problem.
 let _temp = nerdamer(c.timeSubstitutions).solveFor(c.propName)
 console.log({ 
     ts: c.timeSubstitutions, 
-    solutions: _temp.map(t => t.toString()) 
+    solutions: _temp.map(t => `${c.propName} = ${t}`) 
 });
 throw 'stop'
 
@@ -184,7 +182,11 @@ throw 'stop'
     }
 }
 
-
+// (metal + 2t)^2 + 2*(5t + 5t) = 2*(10t + 10t) 
+//
+// x = 4*sqrt(5)*sqrt(t)
+// metal = (1/2)*(-4*t+x)
+// metal = (1/2)*(-4*t-x)
 
 function getBoundaryTimes (
     timeExpression, // the time (t) based expression
