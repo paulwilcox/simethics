@@ -155,8 +155,10 @@ function _catchFromFunc_applyTimeSubstitutions (caughts) {
 // and then only consider the equation which, of those, has the latest time.
 // But I can't articulate a justification right now.
 //
-// Actualy giving happiness a flow rate did not resolve the problem.
-// So it's not happiness = 0 and independent of time that is the problem.
+// Duh, it's the fact that it's a quadradic equation.  So it goes
+// back to deciding which one to use.  And I return to my instinct
+// of first finding the minimum boundary break for all of them, and
+// then choosing the one with the latest break.  
 let _temp = nerdamer(c.timeSubstitutions).solveFor(c.propName)
 console.log({ 
     ts: c.timeSubstitutions, 
@@ -184,9 +186,9 @@ throw 'stop'
 
 // (metal + 2t)^2 + 2*(5t + 5t) = 2*(10t + 10t) 
 //
-// x = 4*sqrt(5)*sqrt(t)
-// metal = (1/2)*(-4*t+x)
-// metal = (1/2)*(-4*t-x)
+// x = 4*sqrt(5)*sqrt(t)        'always positive, undefined for t < 0'
+// metal = (1/2)*(-4*t+x)       'starts positive then goes negative'
+// metal = (1/2)*(-4*t-x)       'always negative'
 
 function getBoundaryTimes (
     timeExpression, // the time (t) based expression
