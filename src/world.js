@@ -42,10 +42,7 @@ world.push(...[
 
 function catchFromFunc(func) {
 
-    let [ sources, targets ] = 
-        func.includes('<-') ? func.split('<-').reverse()
-        : func.includes('->') ? func.split('->')
-        : null;
+    let { sources, targets } = splitFuncToSourceAndTarget(func);
 
     let propFinder = /[A-Z,a-z,_]+/g;
     let props = [
@@ -86,53 +83,73 @@ let caughts = catchFromFunc(func);
 // Pausing on the above note and focus on getting time funcs.  Just 
 // assume extraction of sources and deposits into targets.
 
-// Maybe it only ever makes sense to have a 'remainFunc' for sources.
-// The 'remainFunc' for targets gets considered at a later step.
-
+// Stage 1: calculate flowFuncs (stabilized flowRates) and remainFuncs
 for (let c of caughts) {
 
     let prop = c.getCaughtProp();
 
     c.flowFunc = prop.flowRate || prop.value.toString();
-    
+
+    // Maybe it only ever makes sense to have a 'remainFunc' for sources.
+    // The 'remainFunc' for targets gets considered at a later step.
+    //
+    // I don't think the above is correct.  It makes sense to calculate
+    // remainFuncs, even for targets.  The issue is whether the equations
+    // are time-dependent or not.  
     if (c.type == 'source') {
-        c.remainFunc = prop.value.toString();        
+        c.remainFunc = prop.value.toString();
         if (prop.flowRate !== undefined) 
             c.remainFunc += ' - ' + prop.flowRate;
     }
 
 };
 
-// When substituting time equations for properties, you'll
-// want to take care of the flow funcs of each caught item
-// seperately.
-//
-// Still to be done is taking care of happiness, which doesn't
-// have a flow rate of '0'.  Rather, it's of it's value.  But
-// it is cocrrect that it is independent of time.
-// 
-// Nevermind.  The value of happiness is '0'.  So it's flow
-// func cannot be the value.  
-let flowFuncsBySourceAndProp =  
-    fd(caughts)
-    .group(c => ({ 
-        type: c.type, 
-        propName: c.propName, 
-        flowFunc: c.flowFunc 
-    }))
-    .reduce(({
-        type: fd.first(c => c.type),
-        propName: fd.first(c => c.propName),
-        flowFunc: (agg,next) => agg == '' ? next.flowFunc : agg += ' + ' + next.flowFunc,
-        ['flowFunc.seed']: '' 
-    }))
-    .map(red => ({ ...red, flowFunc: `(${red.flowFunc})`}))
-    .get();
+// Stage 2: Calculate 'inTermsOf' equations by substituting the time 
+// equations for all variables with their time-based equivalents, save
+// the given caught object, which you're trying to solve for.  
+let { sources, targets } = splitFuncToSourceAndTarget(func);
+for (let c of caughts) {
 
+    let _sources = sources;
+    let _targets = targets;
 
+    let timeSubstitutions = 
+        fd(caughts)
+        .group(c2 => ({  
+            type: c2.type, 
+            propName: c2.propName 
+        })) 
+        .reduce(({ // combine caughts within type/propNames via '+'
+            type: fd.first(c2 => c2.type),
+            propName: fd.first(c2 => c2.propName),
+            part: (agg,next) => 
+                agg + 
+                (agg == '' ? '' : ' + ') +
+                (c === next ? c.propName : next.flowFunc), 
+            ['part.seed']: ''
+        }))
+        .map(p => ({ // add parens around type/propName substitutions 
+            type: p.type,
+            propName: p.propName, 
+            part: `(${p.part})`
+        })) 
+        .get();
 
-return;
+    for (let timeSub of timeSubstitutions) 
+        if (timeSub.type == 'source')
+            _sources = _sources.replace(timeSub.propName, timeSub.part);
+        else if (timeSub.type == 'target')
+            _targets = _targets.replace(timeSub.propName, timeSub.part);
 
+    c.timeSubstitutions = `${_sources} = ${_targets}`;
+    c.inTermsOf = nerdamer(c.timeSubstitutions).solveFor(c.propName);
+    c.inTermsOfStr = c.inTermsOf.toString();
+
+}
+
+console.log(caughts);
+
+/*
 
 function getBoundaryTimes (
     timeExpression, // the time (t) based expression
@@ -163,6 +180,21 @@ console.log(
         timeExpression = '(2*t)^2 + 2*(5*t)', 100, 'max'    
     )
 ); 
+
+*/
+
+// Split a [*] b <- c [*] d to { source: c [*] d, target: a [*] b }, or
+// split a [*] b -> c [*] d to { source: a [*] b, target: c [*] d }
+function splitFuncToSourceAndTarget (func) {
+    
+    let [ sources, targets ] = 
+        func.includes('<-') ? func.split('<-').reverse()
+        : func.includes('->') ? func.split('->')
+        : null;
+
+    return { sources, targets };
+
+}
 
 
 /*
