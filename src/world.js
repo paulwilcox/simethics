@@ -40,6 +40,29 @@ world.push(...[
 
 ]);
 
+// I think it's going to be important to better apply a '+' or '-' to 
+// a propName.  That's may be hard if the '-' isn't right next to the
+// variable name.  So we may have to require the negative be right next
+// to the variable or a special function name be used to identify 
+// deposit or extraction.  So '3(-x)' or '3ext(x)' instead of just '-3x'.
+//
+// But the pure math may work itself out.  
+// -2x = y
+// x = -y/2
+// If y is positive, x would be negative, and so you would extract from x
+//
+// Pausing on the above note and focus on getting time funcs.  Just 
+// assume extraction of sources and deposits into targets.
+
+
+let func = '2*happiness <- metal^2 + 2*energy';
+
+let caughts = catchFromFunc(func);
+console.log(caughts);
+
+
+
+
 function catchFromFunc(func) {
 
     let { sources, targets } = splitFuncToSourceAndTarget(func);
@@ -61,93 +84,75 @@ function catchFromFunc(func) {
                 getCaughtProp: () => w[p.propName]
             });
 
+    _catchFromFunc_calcFlowAndRemainFuncs(caughts);
+    _catchFromFunc_applyTimeSubstitutions(caughts);
     return caughts;
 
 }
 
-let func = '2*happiness <- metal^2 + 2*energy';
-
-let caughts = catchFromFunc(func);
-
-// I think it's going to be important to better apply a '+' or '-' to 
-// a propName.  That's may be hard if the '-' isn't right next to the
-// variable name.  So we may have to require the negative be right next
-// to the variable or a special function name be used to identify 
-// deposit or extraction.  So '3(-x)' or '3ext(x)' instead of just '-3x'.
-//
-// But the pure math may work itself out.  
-// -2x = y
-// x = -y/2
-// If y is positive, x would be negative, and so you would extract from x
-//
-// Pausing on the above note and focus on getting time funcs.  Just 
-// assume extraction of sources and deposits into targets.
-
 // Stage 1: calculate flowFuncs (stabilized flowRates) and remainFuncs
-for (let c of caughts) {
+function _catchFromFunc_calcFlowAndRemainFuncs (caughts) {
+    for (let c of caughts) {
 
-    let prop = c.getCaughtProp();
+        let prop = c.getCaughtProp();
 
-    c.flowFunc = prop.flowRate || prop.value.toString();
+        c.flowFunc = prop.flowRate || prop.value.toString();
 
-    // Maybe it only ever makes sense to have a 'remainFunc' for sources.
-    // The 'remainFunc' for targets gets considered at a later step.
-    //
-    // I don't think the above is correct.  It makes sense to calculate
-    // remainFuncs, even for targets.  The issue is whether the equations
-    // are time-dependent or not.  
-    if (c.type == 'source') {
-        c.remainFunc = prop.value.toString();
-        if (prop.flowRate !== undefined) 
-            c.remainFunc += ' - ' + prop.flowRate;
+        if (c.type == 'source') {
+            c.remainFunc = prop.value.toString();
+            if (prop.flowRate !== undefined) 
+                c.remainFunc += ' - ' + prop.flowRate;
+        }
+
     }
-
 };
 
 // Stage 2: Calculate 'inTermsOf' equations by substituting the time 
 // equations for all variables with their time-based equivalents, save
 // the given caught object, which you're trying to solve for.  
-let { sources, targets } = splitFuncToSourceAndTarget(func);
-for (let c of caughts) {
+function _catchFromFunc_applyTimeSubstitutions (caughts) {
+        
+    let { sources, targets } = splitFuncToSourceAndTarget(func);
+    for (let c of caughts) {
 
-    let _sources = sources;
-    let _targets = targets;
+        let _sources = sources;
+        let _targets = targets;
 
-    let timeSubstitutions = 
-        fd(caughts)
-        .group(c2 => ({  
-            type: c2.type, 
-            propName: c2.propName 
-        })) 
-        .reduce(({ // combine caughts within type/propNames via '+'
-            type: fd.first(c2 => c2.type),
-            propName: fd.first(c2 => c2.propName),
-            part: (agg,next) => 
-                agg + 
-                (agg == '' ? '' : ' + ') +
-                (c === next ? c.propName : next.flowFunc), 
-            ['part.seed']: ''
-        }))
-        .map(p => ({ // add parens around type/propName substitutions 
-            type: p.type,
-            propName: p.propName, 
-            part: `(${p.part})`
-        })) 
-        .get();
+        let timeSubstitutions = 
+            fd(caughts)
+            .group(c2 => ({  
+                type: c2.type, 
+                propName: c2.propName 
+            })) 
+            .reduce(({ // combine caughts within type/propNames via '+'
+                type: fd.first(c2 => c2.type),
+                propName: fd.first(c2 => c2.propName),
+                part: (agg,next) => 
+                    agg + 
+                    (agg == '' ? '' : ' + ') +
+                    (c === next ? c.propName : next.flowFunc), 
+                ['part.seed']: ''
+            }))
+            .map(p => ({ // add parens around type/propName substitutions 
+                type: p.type,
+                propName: p.propName, 
+                part: `(${p.part})`
+            })) 
+            .get();
 
-    for (let timeSub of timeSubstitutions) 
-        if (timeSub.type == 'source')
-            _sources = _sources.replace(timeSub.propName, timeSub.part);
-        else if (timeSub.type == 'target')
-            _targets = _targets.replace(timeSub.propName, timeSub.part);
+        for (let timeSub of timeSubstitutions) 
+            if (timeSub.type == 'source')
+                _sources = _sources.replace(timeSub.propName, timeSub.part);
+            else if (timeSub.type == 'target')
+                _targets = _targets.replace(timeSub.propName, timeSub.part);
 
-    c.timeSubstitutions = `${_sources} = ${_targets}`;
-    c.inTermsOf = nerdamer(c.timeSubstitutions).solveFor(c.propName);
-    c.inTermsOfStr = c.inTermsOf.toString();
+        c.timeSubstitutions = `${_sources} = ${_targets}`;
+        c.inTermsOf = nerdamer(c.timeSubstitutions).solveFor(c.propName);
+        c.inTermsOfStr = c.inTermsOf.toString();
 
+    }
 }
 
-console.log(caughts);
 
 /*
 
