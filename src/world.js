@@ -6,7 +6,7 @@ require('../node_modules/nerdamer/Calculus.js');
 require('../node_modules/nerdamer/Solve.js');
 
 console.log({
-    solution: nerdamer('x = t^-0.5', { t: '1'}).toString()
+    solution: nerdamer('x = t^-0.5', { t: '0'}).toString()
 }) 
 
 
