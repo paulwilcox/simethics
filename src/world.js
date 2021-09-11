@@ -5,9 +5,17 @@ require('../node_modules/nerdamer/Algebra.js');
 require('../node_modules/nerdamer/Calculus.js');
 require('../node_modules/nerdamer/Solve.js');
 
+try {
 console.log({
     solution: nerdamer('x = t^-0.5', { t: '0'}).toString()
 }) 
+}
+catch(e) {
+    if (e.message.startsWith('Division by zero is not allowed'))
+        console.log('would be inf'); // in reality, just return undefined or similar
+    else 
+        throw e;
+}
 
 
 return;
