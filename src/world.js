@@ -179,6 +179,8 @@ function _catchFromFunc_applyTimeSubstitutions (caughts) {
         let boundaryTimes = [];
 
         // True reversion, because my last revert did not work correctly.
+        // Another change.  Is git going to work now?
+
 
         // boundaries imposed by equation bottlenecks
         boundaryTimes.push(...c.timeFuncs.map(tf => 
