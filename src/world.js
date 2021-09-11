@@ -189,9 +189,14 @@ function _catchFromFunc_applyTimeSubstitutions (caughts) {
             c.boundaryTimes.push(...getBoundaryTimes(c.remainFunc, cp));
 
         // boundaries imposed by equation bottlenecks
+        // TODO: Implement the strategy in the notes described in the paragraphs just above
         for (let tf of c.timeFuncs)
             c.boundaryTimes.push(...getBoundaryTimes(tf, cp));
 
+        c.boundaryTimesStr = c.boundaryTimes.map(bt => 
+            `${Math.round(bt.t,4)} | isEscape: ${bt.isEscape}`
+        );
+        
     }
 
 }
