@@ -176,42 +176,30 @@ function _catchFromFunc_applyTimeSubstitutions (caughts) {
 
         // TODO: apply getBoundaryTimes to 'inTermsOf' and 'remainFunc' for max and mins.
 
-        // future loops will feed this.
-        c.boundaryTimes = [];
+        let boundaryTimes = [];
 
-    }
+        // True reversion, because my last revert did not work correctly.
 
-    // So, I'm looping seperately now.  Definitely doing remain
-    // funcs first then time funcs.  But I think the calculation 
-    // of time substitutions, and so time funcs, needs to happen
-    // after the remain funcs because the boundary values derived
-    // from the remain funcs perhaps need to be taken into account.
-    // 
-    // And having written that and reviewed my workthorugh below, 
-    // I realize I just went full circle.  Doing it this way would
-    // potentially allow boundary escapes to go undetected because
-    // for non-linear relations it might not be the source boundary
-    // escapes that cause the target boundary escapes.  
-    //
-    // I bet I'll forget this yet again.
+        // boundaries imposed by equation bottlenecks
+        boundaryTimes.push(...c.timeFuncs.map(tf => 
+            getBoundaryTimes(tf, c.getCaughtProp().lower, 'min')
+        ));
+        boundaryTimes.push(...c.timeFuncs.map(tf => 
+            getBoundaryTimes(tf, c.getCaughtProp().upper, 'max')
+        ));
 
-    // boundaries imposed by the giving object
-    for(let c of caughts) 
+        // boundaries imposed by the giving object
         if (c.remainFunc) {
-            let cp = c.getCaughtProp();
             boundaryTimes.push(
-                ...getBoundaryTimes(c.remainFunc, cp.lower, 'min'),
-                ...getBoundaryTimes(c.remainFunc, cp.upper, 'max')
+                ...getBoundaryTimes(c.remainFunc, c.getCaughtProp().lower, 'min')
+            );
+            boundaryTimes.push(
+                ...getBoundaryTimes(c.remainFunc, c.getCaughtProp().upper, 'max')
             );
         }
 
-    // boundaries imposed by equation bottlenecks
-    for(let c of caughts) { 
-        let cp = c.getCaughtProp();
-        c.boundaryTimes.push(
-            ...c.timeFuncs.map(tf => getBoundaryTimes(tf, cp.lower, 'min')),
-            ...c.timeFuncs.map(tf => getBoundaryTimes(tf, cp.upper, 'max'))
-        );
+        c.peek = boundaryTimes; // temp just to peek
+
     }
 
 }
