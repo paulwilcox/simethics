@@ -5,6 +5,13 @@ require('../node_modules/nerdamer/Algebra.js');
 require('../node_modules/nerdamer/Calculus.js');
 require('../node_modules/nerdamer/Solve.js');
 
+console.log({
+    solution: nerdamer('x = t^-0.5', { t: '1'}).toString()
+}) 
+
+
+return;
+
 let time = { 
     previous: null, 
     current: 0, 
@@ -223,8 +230,6 @@ function _getBoundaryTimes (
 ) {
 
     let derivative = nerdamer(`diff( ${timeExpression}, t )`);
-
-console.log(`${timeExpression} = ${boundary}`)
 
     return nerdamer(`${timeExpression} = ${boundary}`)
         .solveFor('t')
