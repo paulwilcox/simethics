@@ -169,56 +169,62 @@ function _catchFromFunc_applyTimeSubstitutions (caughts) {
         // this break if it's not good.  But I"ll keep the second safer solution
         // in mind.  Also I know I need a better think-through of the justification
         // in general.
+        //
+        // (metal + 2t)^2 + 2*(5t + 5t) = 2*(10t + 10t) 
+        //
+        // x = 4*sqrt(5)*sqrt(t)        'always positive, undefined for t < 0'
+        // metal = (1/2)*(-4*t+x)       'starts positive then goes negative'
+        // metal = (1/2)*(-4*t-x)       'always negative'
+
+
         c.timeFuncs = 
             nerdamer(c.timeSubstitutions)
             .solveFor(c.propName)
-            .toString();
+            .map(tf => tf.toString());
 
-        // TODO: apply getBoundaryTimes to 'inTermsOf' and 'remainFunc' for max and mins.
-
-        let boundaryTimes = [];
-
-        // True reversion, because my last revert did not work correctly.
-        // Another change.  Is git going to work now?
-
-
-        // boundaries imposed by equation bottlenecks
-        boundaryTimes.push(...c.timeFuncs.map(tf => 
-            getBoundaryTimes(tf, c.getCaughtProp().lower, 'min')
-        ));
-        boundaryTimes.push(...c.timeFuncs.map(tf => 
-            getBoundaryTimes(tf, c.getCaughtProp().upper, 'max')
-        ));
+        c.boundaryTimes = [];
+        let cp = c.getCaughtProp();
 
         // boundaries imposed by the giving object
-        if (c.remainFunc) {
-            boundaryTimes.push(
-                ...getBoundaryTimes(c.remainFunc, c.getCaughtProp().lower, 'min')
+        if (c.remainFunc) 
+            c.boundaryTimes.push(
+                ...getBoundaryTimes(c.remainFunc, cp)
             );
-            boundaryTimes.push(
-                ...getBoundaryTimes(c.remainFunc, c.getCaughtProp().upper, 'max')
-            );
-        }
 
-        c.peek = boundaryTimes; // temp just to peek
+        // boundaries imposed by equation bottlenecks
+        c.boundaryTimes.push(
+            ...c.timeFuncs.map(tf => getBoundaryTimes(tf, cp))
+        );
 
     }
 
 }
 
-// (metal + 2t)^2 + 2*(5t + 5t) = 2*(10t + 10t) 
-//
-// x = 4*sqrt(5)*sqrt(t)        'always positive, undefined for t < 0'
-// metal = (1/2)*(-4*t+x)       'starts positive then goes negative'
-// metal = (1/2)*(-4*t-x)       'always negative'
+function getBoundaryTimes(
+    timeExpression,
+    boundProp
+) {
+    let boundaryTimes = [];
+    if (boundProp.lower !== -Infinity && boundProp.lower !== Infinity)
+        boundaryTimes.push(
+            _getBoundaryTimes(timeExpression, boundProp.lower, 'min')
+        );
+    if (boundProp.upper !== -Infinity && boundProp.upper !== Infinity)
+        boundaryTimes.push(
+            _getBoundaryTimes(timeExpression, boundProp.upper, 'max')
+        );
+    return boundaryTimes;
+}
 
-function getBoundaryTimes (
+function _getBoundaryTimes (
     timeExpression, // the time (t) based expression
     boundary, // the constraint value
     boundaryType // 'min' or 'max'
 ) {
 
     let derivative = nerdamer(`diff( ${timeExpression}, t )`);
+
+console.log(`${timeExpression} = ${boundary}`)
 
     return nerdamer(`${timeExpression} = ${boundary}`)
         .solveFor('t')
