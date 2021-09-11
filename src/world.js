@@ -5,21 +5,6 @@ require('../node_modules/nerdamer/Algebra.js');
 require('../node_modules/nerdamer/Calculus.js');
 require('../node_modules/nerdamer/Solve.js');
 
-try {
-console.log({
-    solution: nerdamer('x = t^-0.5', { t: '0'}).toString()
-}) 
-}
-catch(e) {
-    if (e.message.startsWith('Division by zero is not allowed'))
-        console.log('would be inf'); // in reality, just return undefined or similar
-    else 
-        throw e;
-}
-
-
-return;
-
 let time = { 
     previous: null, 
     current: 0, 
@@ -191,7 +176,6 @@ function _catchFromFunc_applyTimeSubstitutions (caughts) {
         // metal = (1/2)*(-4*t+x)       'starts positive then goes negative'
         // metal = (1/2)*(-4*t-x)       'always negative'
 
-
         c.timeFuncs = 
             nerdamer(c.timeSubstitutions)
             .solveFor(c.propName)
@@ -202,14 +186,11 @@ function _catchFromFunc_applyTimeSubstitutions (caughts) {
 
         // boundaries imposed by the giving object
         if (c.remainFunc) 
-            c.boundaryTimes.push(
-                ...getBoundaryTimes(c.remainFunc, cp)
-            );
+            c.boundaryTimes.push(...getBoundaryTimes(c.remainFunc, cp));
 
         // boundaries imposed by equation bottlenecks
-        c.boundaryTimes.push(
-            ...c.timeFuncs.map(tf => getBoundaryTimes(tf, cp))
-        );
+        for (let tf of c.timeFuncs)
+            c.boundaryTimes.push(...getBoundaryTimes(tf, cp));
 
     }
 
@@ -222,11 +203,11 @@ function getBoundaryTimes(
     let boundaryTimes = [];
     if (boundProp.lower !== -Infinity && boundProp.lower !== Infinity)
         boundaryTimes.push(
-            _getBoundaryTimes(timeExpression, boundProp.lower, 'min')
+            ..._getBoundaryTimes(timeExpression, boundProp.lower, 'min')
         );
     if (boundProp.upper !== -Infinity && boundProp.upper !== Infinity)
         boundaryTimes.push(
-            _getBoundaryTimes(timeExpression, boundProp.upper, 'max')
+            ..._getBoundaryTimes(timeExpression, boundProp.upper, 'max')
         );
     return boundaryTimes;
 }
@@ -242,27 +223,25 @@ function _getBoundaryTimes (
     return nerdamer(`${timeExpression} = ${boundary}`)
         .solveFor('t')
         .map(solved => {
-            let _ = {};
-            _.equation = `${timeExpression} = ${boundary}`,
-            _.t = nerdamer(solved).evaluate();
-            _.derivative = derivative.evaluate({t: _.t});
-            _.t = parseFloat(_.t.toDecimal());
-            _.derivative = parseFloat(_.derivative.toDecimal());
-            // as in: does it escape the bounds?
-            _.isEscape = boundaryType == 'min' ? _.derivative < 0 : _.derivative > 0; 
-            return _;
-        });
+            try {
+                let _ = {};
+                _.equation = `${timeExpression} = ${boundary}`,
+                _.t = nerdamer(solved).evaluate();
+                _.derivative = derivative.evaluate({t: _.t});
+                _.t = parseFloat(_.t.toDecimal());
+                _.derivative = parseFloat(_.derivative.toDecimal());
+                // as in: does it escape the bounds?
+                _.isEscape = boundaryType == 'min' ? _.derivative < 0 : _.derivative > 0; 
+                return _;
+            }
+            catch (e) {
+                if (e.message.startsWith('Division by zero is not allowed'))
+                    return undefined;
+            }
+        })
+        .filter(obj => obj !== undefined);
 
 }
-
-/*
-console.log(
-    getBoundaryTimes(
-        timeExpression = '(2*t)^2 + 2*(5*t)', 100, 'max'    
-    )
-); 
-
-*/
 
 // Split a [*] b <- c [*] d to { source: c [*] d, target: a [*] b }, or
 // split a [*] b -> c [*] d to { source: a [*] b, target: c [*] d }
