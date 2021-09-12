@@ -117,6 +117,7 @@ function _catchFromFunc_applyTimeSubstitutions (caughts) {
 
         let _sources = sources;
         let _targets = targets;
+        let cp = c.getCaughtProp();
 
         let timeSubstitutions = 
             fd(caughts)
@@ -150,71 +151,63 @@ function _catchFromFunc_applyTimeSubstitutions (caughts) {
 
         c.timeSubstitutions = `${_sources} = ${_targets}`;
 
-        // Problem.  We can have more than one solution for time.
-        // My instinct here is to take the earliest boundary times for each,
-        // and then only consider the equation which, of those, has the latest time.
-        // But I can't articulate a justification right now.
-        //
-        // Duh, it's the fact that it's a quadradic equation.  So it goes
-        // back to deciding which one to use.  And I return to my instinct
-        // of first finding the minimum boundary break for all of them, and
-        // then choosing the one with the latest break.  
-        // 
-        // Another, safer, possibillity is to take the minimum boundary crossings
-        // and then, of those, select the minimum that is still feasible.  
-        // Time increments less but if the element doesn't hit its boundary then
-        // time will just continue incrementing.
-        // 
-        // I think I'm going to choose the first solution because I want to see
-        // this break if it's not good.  But I"ll keep the second safer solution
-        // in mind.  Also I know I need a better think-through of the justification
-        // in general.
-        //
-        // (metal + 2t)^2 + 2*(5t + 5t) = 2*(10t + 10t) 
-        //
-        // x = 4*sqrt(5)*sqrt(t)        'always positive, undefined for t < 0'
-        // metal = (1/2)*(-4*t+x)       'starts positive then goes negative'
-        // metal = (1/2)*(-4*t-x)       'always negative'
-
+        // This can have more than one solution.  
         c.timeFuncs = 
-            nerdamer(c.timeSubstitutions)
+            solver(c.timeSubstitutions)
             .solveFor(c.propName)
             .map(tf => tf.toString());
 
-        c.boundaryTimes = [];
-        let cp = c.getCaughtProp();
+        // Of the c.timeFuncs, get the earliest times value escapes caught boundaries.
+        // When multiple solutions exist, eliminate any that are not applicable.
+        // If it is already out of bounds at t = 0, it is not applicable.
+        let tfFirstEscapes = 
+            c.timeFuncs
+            .map(tf => getFirstEscape(tf, cp))
+            .filter(fe => fe != 0);
+
+        // Of the applicable solutions, find the earliest escape time.
+        // If no solutions are applicable, set the earliest escape time to 0.
+        let tfFirstEscape = 
+            tfFirstEscapes.length == 0 ? 0 : Math.min(...tfFirstEscapes);
 
         // boundaries imposed by the giving object
-        if (c.remainFunc) 
-            c.boundaryTimes.push(...getBoundaryTimes(c.remainFunc, cp));
+        let remainFirstEscape =     
+            c.remainFunc 
+            ? getFirstEscape(c.remainFunc, cp)
+            : Infinity;
 
-        // boundaries imposed by equation bottlenecks
-        // TODO: Implement the strategy in the notes described in the paragraphs just above
-        for (let tf of c.timeFuncs) 
-            c.boundaryTimes.push(...getBoundaryTimes(tf, cp));
-
-        // wrote this up but I think it may be better to just work
-        // within the for loop above
-        fd(c.boundaryTimes)
-            .filter(bt => bt.t) // we won't be moving back in time
-            .group(bt => bt.equation)
-            .window({reduce: {
-                isViableAtT0: table => !table.some(bt => bt == 0 && bt.isEscape) 
-            }})
-            .reduce({
-                minEscape: fd.min(bt => 
-                    bt.isViableAtT0 ? // ...
-                )
-            })
-            .map(bt => ({ t: bt.t }))
-            .log();
-
-        c.boundaryTimesStr = c.boundaryTimes.map(bt => 
-            `${Math.round(bt.t,4)} | isEscape: ${bt.isEscape}`
-        );
+        c.firstEscape = Math.min(tfFirstEscape, remainFirstEscape);
         
     }
 
+}
+
+// Get the earliest (current or future) time at which the 
+// timeFunction will go out of bounds with respect to 
+// boundNum lower and upper limits. 
+function getFirstEscape (
+    timeFunction,
+    boundNum 
+) {
+
+    // If timeFunc isn't even in bounds at t = 0, return '0' to indicate 
+    // that you can't make use of the equation even a little bit.
+    let t0val = solver(timeFunction).evaluateToFloat({t: 0});
+    if (t0val === undefined) return 0; 
+    if (t0val < cp.lower) return 0;
+    if (t0val > cp.upper) return 0;
+
+    let tfFirstEscape = 
+        fd(getBoundaryTimes(timeFunction, boundNum))
+        .filter(bt => bt.t >= 0 && bt.isEscape) 
+        .reduce(bt => fd.min(bt.t))
+        .get();            
+
+    return   tfFirstEscape === 0 ? 0
+            : tfFirstEscape === undefined ? Infinity
+            : tfFirstEscape === null ? Infinity
+            : tfFirstEscape;
+ 
 }
 
 function getBoundaryTimes(
@@ -222,7 +215,7 @@ function getBoundaryTimes(
     boundProp
 ) {
 
-    let boundaryTimes = [];
+    let boundaryTimes = []; 
 
     if (boundProp.lower !== -Infinity && boundProp.lower !== Infinity)
         boundaryTimes.push(
@@ -234,13 +227,6 @@ function getBoundaryTimes(
             ..._getBoundaryTimes(timeExpression, boundProp.upper, 'upper')
         );
 
-    // This function takes the timeExpression as a whole.  If it's not viable
-    // at t = 0, either by min or max, it will be marke as such in both 
-    // min and max.   
-    let timeExpressionIsViableAtT0 = !boundaryTimes.some(bt => bt.t == 0 && bt.isEscape);
-    for (let bt of boundaryTimes)
-        bt.timeExpressionIsViableAtT0 = timeExpressionIsViableAtT0;
-
     return boundaryTimes;
 
 }
@@ -251,26 +237,20 @@ function _getBoundaryTimes (
     boundaryType // 'lower' or 'upper'
 ) {
 
-    let derivative = nerdamer(`diff( ${timeExpression}, t )`);
+    let derivative = solver(`diff( ${timeExpression}, t )`);
 
-    return nerdamer(`${timeExpression} = ${boundary}`)
+    return solver(`${timeExpression} = ${boundary}`)
         .solveFor('t')
         .map(solved => {
-            try {
-                let _ = {};
-                _.equation = `${timeExpression} = ${boundary}`,
-                _.t = nerdamer(solved).evaluate();
-                _.derivative = derivative.evaluate({t: _.t});
-                _.t = parseFloat(_.t.toDecimal());
-                _.derivative = parseFloat(_.derivative.toDecimal());
-                // as in: does it escape the bounds?
-                _.isEscape = boundaryType == 'lower' ? _.derivative < 0 : _.derivative > 0; 
-                return _;
-            }
-            catch (e) {
-                if (e.message.startsWith('Division by zero is not allowed'))
-                    return undefined;
-            }
+            let _ = {};
+            _.equation = `${timeExpression} = ${boundary}`,
+            _.t = solver.evaluateToFloat(solved);
+            _.derivative = solver.evaluateToFloat(derivative, {t: _.t});
+            if (_.derivative === undefined)
+                return undefined;
+            // as in: does it escape the bounds?
+            _.isEscape = boundaryType == 'lower' ? _.derivative < 0 : _.derivative > 0; 
+            return _;
         })
         .filter(obj => obj !== undefined);
 
@@ -289,6 +269,31 @@ function splitFuncToSourceAndTarget (func) {
 
 }
 
+class solver extends nerdamer {
+
+    constructor(...args) {
+        super(...args);
+    }
+
+    // nerdamer.eval, except returns undefined on divide-by-zero errors
+    evaluate (...args) {
+        try {
+            return this.evaluate(variableVals)
+        }
+        catch (e) {
+            if (e.message.startsWith('Division by zero is not allowed'))
+                return undefined;
+        }
+    }
+
+    evaluateToFloat(...args) {
+        let solution = this.evaluate(...args);
+        if (solution === undefined)
+            return undefined;
+        return parseFloat(solution.toDecimal());
+    }
+
+}
 
 /*
 
