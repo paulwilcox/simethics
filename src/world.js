@@ -1,9 +1,6 @@
 let bnm = require('./boundNumberMaker.js');
-let nerdamer = require('nerdamer');
 let fd = require('fluent-data');
-require('../node_modules/nerdamer/Algebra.js');
-require('../node_modules/nerdamer/Calculus.js');
-require('../node_modules/nerdamer/Solve.js');
+let solver = require('./solver.js');
 
 let time = { 
     previous: null, 
@@ -155,6 +152,7 @@ function _catchFromFunc_applyTimeSubstitutions (caughts) {
         c.timeFuncs = 
             solver(c.timeSubstitutions)
             .solveFor(c.propName)
+            .get()
             .map(tf => tf.toString());
 
         // Of the c.timeFuncs, get the earliest times value escapes caught boundaries.
@@ -192,15 +190,16 @@ function getFirstEscape (
 
     // If timeFunc isn't even in bounds at t = 0, return '0' to indicate 
     // that you can't make use of the equation even a little bit.
-    let t0val = solver(timeFunction).evaluateToFloat({t: 0});
+    let t0val = solver(timeFunction).evaluateToFloat({t: 0}).get();
     if (t0val === undefined) return 0; 
-    if (t0val < cp.lower) return 0;
-    if (t0val > cp.upper) return 0;
+    if (t0val < boundNum.lower) return 0;
+    if (t0val > boundNum.upper) return 0;
 
     let tfFirstEscape = 
         fd(getBoundaryTimes(timeFunction, boundNum))
         .filter(bt => bt.t >= 0 && bt.isEscape) 
-        .reduce(bt => fd.min(bt.t))
+        .sort(bt => bt.t)
+        .reduce(fd.first(bt => bt.t))
         .get();            
 
     return   tfFirstEscape === 0 ? 0
@@ -241,11 +240,13 @@ function _getBoundaryTimes (
 
     return solver(`${timeExpression} = ${boundary}`)
         .solveFor('t')
+        .get()
         .map(solved => {
+            solved = solver.fromNerdamerObj(solved);
             let _ = {};
             _.equation = `${timeExpression} = ${boundary}`,
-            _.t = solver.evaluateToFloat(solved);
-            _.derivative = solver.evaluateToFloat(derivative, {t: _.t});
+            _.t = solved.evaluateToFloat(solved).get();
+            _.derivative = solved.evaluateToFloat(derivative, {t: _.t}).get();
             if (_.derivative === undefined)
                 return undefined;
             // as in: does it escape the bounds?
@@ -269,31 +270,6 @@ function splitFuncToSourceAndTarget (func) {
 
 }
 
-class solver extends nerdamer {
-
-    constructor(...args) {
-        super(...args);
-    }
-
-    // nerdamer.eval, except returns undefined on divide-by-zero errors
-    evaluate (...args) {
-        try {
-            return this.evaluate(variableVals)
-        }
-        catch (e) {
-            if (e.message.startsWith('Division by zero is not allowed'))
-                return undefined;
-        }
-    }
-
-    evaluateToFloat(...args) {
-        let solution = this.evaluate(...args);
-        if (solution === undefined)
-            return undefined;
-        return parseFloat(solution.toDecimal());
-    }
-
-}
 
 /*
 
