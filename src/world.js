@@ -57,7 +57,9 @@ let func = '2*happiness <- metal^2 + 2*energy';
 let caughts = catchFromFunc(func);
 console.log(caughts);
 
-
+// TODO: find min escape time of all caughts.
+// Increment t by that time.
+// Then find out how to make appropriate withdrawals and deposits.
 
 
 function catchFromFunc(func) {
@@ -179,6 +181,9 @@ function _catchFromFunc_applyTimeSubstitutions (caughts) {
     }
 
 }
+
+// TODO: maybe getBoundaaryTimes can be subsumed w/in getFirstEscape
+// and _getBoundaryTimes renamed to getBoundaryTimes.
 
 // Get the earliest (current or future) time at which the 
 // timeFunction will go out of bounds with respect to 
