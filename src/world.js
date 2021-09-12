@@ -194,7 +194,7 @@ function _catchFromFunc_applyTimeSubstitutions (caughts) {
             c.boundaryTimes.push(...getBoundaryTimes(tf, cp));
 
         c.boundaryTimesStr = c.boundaryTimes.map(bt => 
-            `${Math.round(bt.t,4)} | isEscape: ${bt.isEscape}`
+            `${Math.round(bt.t,4)} | isEscape: ${bt.isEscape} | ivt0: ${bt.timeExpressionIsViableAtT0}`
         );
         
     }
@@ -205,16 +205,28 @@ function getBoundaryTimes(
     timeExpression,
     boundProp
 ) {
+
     let boundaryTimes = [];
+
     if (boundProp.lower !== -Infinity && boundProp.lower !== Infinity)
         boundaryTimes.push(
             ..._getBoundaryTimes(timeExpression, boundProp.lower, 'min')
         );
+
     if (boundProp.upper !== -Infinity && boundProp.upper !== Infinity)
         boundaryTimes.push(
             ..._getBoundaryTimes(timeExpression, boundProp.upper, 'max')
         );
+
+    // This function takes the timeExpression as a whole.  If it's not viable
+    // at t = 0, either by min or max, it will be marke as such in both 
+    // min and max.   
+    let timeExpressionIsViableAtT0 = !boundaryTimes.some(bt => bt.t == 0 && bt.isEscape);
+    for (let bt of boundaryTimes)
+        bt.timeExpressionIsViableAtT0 = timeExpressionIsViableAtT0;
+
     return boundaryTimes;
+
 }
 
 function _getBoundaryTimes (
