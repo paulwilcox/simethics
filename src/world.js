@@ -190,11 +190,27 @@ function _catchFromFunc_applyTimeSubstitutions (caughts) {
 
         // boundaries imposed by equation bottlenecks
         // TODO: Implement the strategy in the notes described in the paragraphs just above
-        for (let tf of c.timeFuncs)
+        for (let tf of c.timeFuncs) 
             c.boundaryTimes.push(...getBoundaryTimes(tf, cp));
 
+        // wrote this up but I think it may be better to just work
+        // within the for loop above
+        fd(c.boundaryTimes)
+            .filter(bt => bt.t) // we won't be moving back in time
+            .group(bt => bt.equation)
+            .window({reduce: {
+                isViableAtT0: table => !table.some(bt => bt == 0 && bt.isEscape) 
+            }})
+            .reduce({
+                minEscape: fd.min(bt => 
+                    bt.isViableAtT0 ? // ...
+                )
+            })
+            .map(bt => ({ t: bt.t }))
+            .log();
+
         c.boundaryTimesStr = c.boundaryTimes.map(bt => 
-            `${Math.round(bt.t,4)} | isEscape: ${bt.isEscape} | ivt0: ${bt.timeExpressionIsViableAtT0}`
+            `${Math.round(bt.t,4)} | isEscape: ${bt.isEscape}`
         );
         
     }
@@ -210,12 +226,12 @@ function getBoundaryTimes(
 
     if (boundProp.lower !== -Infinity && boundProp.lower !== Infinity)
         boundaryTimes.push(
-            ..._getBoundaryTimes(timeExpression, boundProp.lower, 'min')
+            ..._getBoundaryTimes(timeExpression, boundProp.lower, 'lower')
         );
 
     if (boundProp.upper !== -Infinity && boundProp.upper !== Infinity)
         boundaryTimes.push(
-            ..._getBoundaryTimes(timeExpression, boundProp.upper, 'max')
+            ..._getBoundaryTimes(timeExpression, boundProp.upper, 'upper')
         );
 
     // This function takes the timeExpression as a whole.  If it's not viable
@@ -232,7 +248,7 @@ function getBoundaryTimes(
 function _getBoundaryTimes (
     timeExpression, // the time (t) based expression
     boundary, // the constraint value
-    boundaryType // 'min' or 'max'
+    boundaryType // 'lower' or 'upper'
 ) {
 
     let derivative = nerdamer(`diff( ${timeExpression}, t )`);
@@ -248,7 +264,7 @@ function _getBoundaryTimes (
                 _.t = parseFloat(_.t.toDecimal());
                 _.derivative = parseFloat(_.derivative.toDecimal());
                 // as in: does it escape the bounds?
-                _.isEscape = boundaryType == 'min' ? _.derivative < 0 : _.derivative > 0; 
+                _.isEscape = boundaryType == 'lower' ? _.derivative < 0 : _.derivative > 0; 
                 return _;
             }
             catch (e) {
