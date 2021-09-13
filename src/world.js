@@ -51,6 +51,21 @@ world.push(...[
 // Pausing on the above note and focus on getting time funcs.  Just 
 // assume extraction of sources and deposits into targets.
 
+// How am I going to resolve things when there are multiple funcs?  I
+// don't wan't to do a queue, because that will make it order dependent.
+// I think some sort of composition is necessary.  
+//
+// But I think the composition will be simple.  Add up all the sources
+// for the sources.  On the other side, add up all the targets.
+//
+// func1 = '2*happiness <- metal^2 + 2*energy'
+// func2 = '7*widgets <- knowledge^2 + 3*tools
+// composite = 2*happiness + 7*widgets <- metal^2 + 2*energy + knowledge^2 + 3*tools
+//
+// One concern is that more complex equations may be too sensitive for the solver.
+// Possible that inTermsOf's can be additively composed as well, but I"m not sure
+//
+// Another pause though.  Not time for this.
 
 let func = '2*happiness <- metal^2 + 2*energy';
 
