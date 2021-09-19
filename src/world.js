@@ -65,12 +65,28 @@ world.push(...[
 // One concern is that more complex equations may be too sensitive for the solver.
 // Possible that inTermsOf's can be additively composed as well, but I"m not sure
 //
-// Another pause though.  Not time for this.
+// I gave this a shot.  Bad results.  Became very slow and firstEscapes for some
+// functions turned to infinity, as opposed to smaller result. 
 
-let func = '2*happiness <- metal^2 + 2*energy';
+let funcs = [
+    '2*happiness <- metal^2 + 2*energy',
+    '4*pain <- rock^3'
+]
 
-let caughts = catchFromFunc(func);
-console.log(caughts);
+let sources = [];
+let targets = [];
+
+for (let func of funcs) {
+    let parts = splitFuncToSourceAndTarget(func);
+    sources.push(`(${parts.sources})`);
+    targets.push(`(${parts.targets})`);
+}
+
+let mainFunc = sources.join(' + ') + ' <- ' + targets.join(' + ');
+
+console.log(mainFunc);
+let caughts = catchFromFunc(mainFunc);
+console.log([...caughts].map(c => c.firstEscape));
 
 // TODO: find min escape time of all caughts.
 // Increment t by that time.
@@ -98,7 +114,7 @@ function catchFromFunc(func) {
             });
 
     _catchFromFunc_calcFlowAndRemainFuncs(caughts);
-    _catchFromFunc_applyTimeSubstitutions(caughts);
+    _catchFromFunc_applyTimeSubstitutions(caughts, func);
     return caughts;
 
 }
@@ -123,7 +139,7 @@ function _catchFromFunc_calcFlowAndRemainFuncs (caughts) {
 // Stage 2: Calculate 'inTermsOf' equations by substituting the time 
 // equations for all variables with their time-based equivalents, save
 // the given caught object, which you're trying to solve for.  
-function _catchFromFunc_applyTimeSubstitutions (caughts) {
+function _catchFromFunc_applyTimeSubstitutions (caughts, func) {
         
     let { sources, targets } = splitFuncToSourceAndTarget(func);
     for (let c of caughts) {
