@@ -24,12 +24,12 @@ world.push(...[
     
     { 
         name: 'Ariceli', 
-        happiness: n(0).l(0).u(100).f('10t'), 
+        happiness: n(0).l(-100).u(100).f('10t'), 
         energy: n(20).l(0).u(100).f('5t') 
     },
     { 
         name: 'Aaron', 
-        happiness: n(0).l(0).u(100).f('10t'), 
+        happiness: n(0).l(-100).u(100).f('10t'), 
         energy: n(35).l(0).u(100).f('5t') 
     }, 
 
@@ -67,10 +67,15 @@ world.push(...[
 //
 // I gave this a shot.  Bad results.  Became very slow and firstEscapes for some
 // functions turned to infinity, as opposed to smaller result. 
+//
+// Ah, I was including a variable that didn't exist in the world (pain).  I'll look
+// into that later.  Pain is negative happiness.  So I corrected that, and set 
+// the minimum bound of happiness in the world settings to be negative, not 0, and
+// it seems to possibly work.  But it's still slow.
 
 let funcs = [
     '2*happiness <- metal^2 + 2*energy',
-    '4*pain <- rock^3'
+    '-0.25*happiness <- 0.5*rock'
 ]
 
 let sources = [];
