@@ -75,7 +75,8 @@ world.push(...[
 
 let funcs = [
     '2*happiness <- metal^2 + 2*energy',
-    '-0.25*happiness <- 0.5*rock'
+    '-0.25*happiness <- 0.5*rock',
+    '1.5*rock <- 7*metal + energy' // TODO: adding this gives an error
 ]
 
 let sources = [];
@@ -89,13 +90,12 @@ for (let func of funcs) {
 
 let mainFunc = sources.join(' + ') + ' <- ' + targets.join(' + ');
 
-console.log(mainFunc);
-let caughts = catchFromFunc(mainFunc);
-console.log([...caughts].map(c => c.firstEscape));
-
 // TODO: find min escape time of all caughts.
 // Increment t by that time.
 // Then find out how to make appropriate withdrawals and deposits.
+console.log(mainFunc);
+let caughts = catchFromFunc(mainFunc);
+console.log([...caughts].map(c => c.firstEscape));
 
 function catchFromFunc(func) {
 
