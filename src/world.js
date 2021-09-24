@@ -19,8 +19,8 @@ let n = bnm(time);
 
 world.push(...[
 
-    { metal: n(50).l(0).f('2t'), rock: n(100).l(0) },
-    { metal: n(25).l(0).f('2t'), rock: n(50).l(0) },
+    { metal: n(50).l(0).f('2t'), rock: n(100).l(0).f('0.5t') },
+    { metal: n(25).l(0).f('2t'), rock: n(50).l(0).f('0.5t') },
     
     { 
         name: 'Ariceli', 
@@ -277,6 +277,9 @@ function _getBoundaryTimes (
 ) {
 
     let derivative = solver(`diff( ${timeExpression}, t )`);
+
+// TODO: Lots of repeats.  Definite chance to increase performance
+console.log(timeExpression)
 
     return solver(`${timeExpression} = ${boundary}`)
         .solveFor('t')
