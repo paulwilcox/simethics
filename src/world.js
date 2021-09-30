@@ -64,14 +64,253 @@ world.push(...[
 //
 // One concern is that more complex equations may be too sensitive for the solver.
 // Possible that inTermsOf's can be additively composed as well, but I"m not sure
-//
-// I gave this a shot.  Bad results.  Became very slow and firstEscapes for some
-// functions turned to infinity, as opposed to smaller result. 
-//
-// Ah, I was including a variable that didn't exist in the world (pain).  I'll look
-// into that later.  Pain is negative happiness.  So I corrected that, and set 
-// the minimum bound of happiness in the world settings to be negative, not 0, and
-// it seems to possibly work.  But it's still slow.
+
+
+class worldFunctionProcessor {
+
+    constructor(
+        world,
+        worldFuncs // an array of directional functions (eg. 'w + x <- y + z'
+    ) {
+
+        this.world = world;
+
+        let merged = this.mergeFunctions(worldFuncs);
+        this.func = merged.func;
+        this.sources = merged.sources;
+        this.targets = merged.targets;
+
+        this.caughts = this.catchProperties();
+        this.setFlowAndRemainFuncs();
+        this.applyTimeSubstitutions();
+        this.calculateFirstEscapes();
+
+    }
+
+    mergeFunctions(funcs) {
+
+        let sources = [];
+        let targets = [];
+
+        for (let func of funcs) {
+            let parts = this.splitFuncToSourceAndTarget(func);
+            sources.push(`(${parts.sources})`);
+            targets.push(`(${parts.targets})`);
+        }
+        
+        return {
+            func: sources.join(' + ') + ' <- ' + targets.join(' + '),
+            sources,
+            targets
+        };
+
+    }
+
+    catchProperties() {
+
+        let propFinder = /[A-Z,a-z,_]+/g;
+        let props = [
+            ...this.sources.map(src => ({ type: 'source', propName: src.match(propFinder) })),
+            ...this.targets.map(trg => ({ type: 'target', propName: trg.match(propFinder) }))
+        ];
+
+        let caughts = new Set();
+
+        for (let p of props)
+        for (let w of this.world) 
+            if (w[p.propName] !== undefined)
+                caughts.add({ 
+                    ...p, 
+                    getCaughtObj: () => w, 
+                    getCaughtProp: () => w[p.propName]
+                });
+
+        return [...caughts];
+
+    }
+
+    // Stage 1: establish flowFuncs (stabilized flowRates) and remainFuncs
+    setFlowAndRemainFuncs () {
+        for (let c of this.caughts) {
+
+            let prop = c.getCaughtProp();
+
+            c.flowFunc = prop.flowRate || prop.value.toString();
+
+            if (c.type == 'source') {
+                c.remainFunc = prop.value.toString();
+                if (prop.flowRate !== undefined) 
+                    c.remainFunc += ' - ' + prop.flowRate;
+            }
+
+        }
+    }
+
+    // Stage 2: Establish 'inTermsOf' equations by substituting the time 
+    // equations for all variables with their time-based equivalents, save
+    // the given caught object, which you're trying to solve for.  
+    applyTimeSubstitutions () {
+            
+        for (let c of this.caughts) {
+
+            let timeSubstitutions = 
+                fd(this.caughts)
+                .group(c2 => ({  
+                    type: c2.type, 
+                    propName: c2.propName 
+                })) 
+                .reduce(({ // combine caughts within type/propNames via '+'
+                    type: fd.first(c2 => c2.type),
+                    propName: fd.first(c2 => c2.propName),
+                    part: (agg,next) => 
+                        agg + 
+                        (agg == '' ? '' : ' + ') +
+                        (c === next ? c.propName : next.flowFunc), 
+                    ['part.seed']: ''
+                }))
+                .map(p => ({ // add parens around type/propName substitutions 
+                    type: p.type,
+                    propName: p.propName, 
+                    part: `(${p.part})`
+                })) 
+                .get();
+
+            let sources = this.sources.join(' + ');
+            let targets = this.targets.join(' + ');
+    
+            for (let timeSub of timeSubstitutions) {
+                let propRx = new RegExp(timeSub.propName,'ig');
+                if (timeSub.type == 'source')
+                    sources = sources.replace(propRx, timeSub.part);
+                else if (timeSub.type == 'target')
+                    targets = targets.replace(propRx, timeSub.part);
+            }
+
+            c.timeSubstitutions = `${sources} = ${targets}`;
+
+// TODO: Lots of repeats.  Definite chance to increase performance
+console.log(c.timeSubstitutions);
+
+        }
+
+    }
+
+    calculateFirstEscapes() {
+
+        for (let c of this.caughts) {
+
+            // This can have more than one solution.  
+            c.timeFuncs = 
+                solver(c.timeSubstitutions)
+                .solveFor(c.propName)
+                .get()
+                .map(tf => tf.toString());
+
+            // Of the c.timeFuncs, get the earliest times value escapes caught boundaries.
+            // When multiple solutions exist, eliminate any that are not applicable.
+            // If it is already out of bounds at t = 0, it is not applicable.
+            let tfFirstEscapes = 
+                c.timeFuncs
+                .map(tf => this.getFirstEscape(tf, c.getCaughtProp()))
+                .filter(fe => fe != 0);
+
+            // Of the applicable solutions, find the earliest escape time.
+            // If no solutions are applicable, set the earliest escape time to 0.
+            let tfFirstEscape = 
+                tfFirstEscapes.length == 0 ? 0 : Math.min(...tfFirstEscapes);
+
+            // boundaries imposed by the giving object
+            let remainFirstEscape =     
+                c.remainFunc 
+                ? this.getFirstEscape(c.remainFunc, c.getCaughtProp())
+                : Infinity;
+
+            c.firstEscape = Math.min(tfFirstEscape, remainFirstEscape);
+            
+        }
+
+    }
+
+    // Get the earliest (current or future) time at which the 
+    // timeFunction will go out of bounds with respect to 
+    // boundNum lower and upper limits. 
+    getFirstEscape (
+        timeFunction,
+        boundNum 
+    ) {
+
+        // If timeFunc isn't even in bounds at t = 0, return '0' to indicate 
+        // that you can't make use of the equation even a little bit.
+        let t0val = solver(timeFunction).evaluateToFloat({t: 0}).get();
+        if (t0val === undefined) return 0; 
+        if (t0val < boundNum.lower) return 0;
+        if (t0val > boundNum.upper) return 0;
+
+        let boundaryTimes = []; 
+        if (boundNum.lower !== -Infinity && boundNum.lower !== Infinity)
+            boundaryTimes.push(
+                ...this.getBoundaryTimes(timeFunction, boundNum.lower, 'lower')
+            );
+        if (boundNum.upper !== -Infinity && boundNum.upper !== Infinity)
+            boundaryTimes.push(
+                ...this.getBoundaryTimes(timeFunction, boundNum.upper, 'upper')
+            );
+
+        let tfFirstEscape = 
+            fd(boundaryTimes)
+            .filter(bt => bt.t >= 0 && bt.isEscape) 
+            .sort(bt => bt.t)
+            .reduce(fd.first(bt => bt.t))
+            .get();            
+
+        return   tfFirstEscape === 0 ? 0
+                : tfFirstEscape === undefined ? Infinity
+                : tfFirstEscape === null ? Infinity
+                : tfFirstEscape;
+    
+    }
+
+    getBoundaryTimes (
+        timeExpression, // the time (t) based expression
+        boundary, // the constraint value
+        boundaryType // 'lower' or 'upper'
+    ) {
+
+        let derivative = solver(`diff( ${timeExpression}, t )`);
+
+        return solver(`${timeExpression} = ${boundary}`)
+            .solveFor('t')
+            .get()
+            .map(solved => {
+                solved = solver.fromNerdamerObj(solved);
+                let _ = {};
+                _.equation = `${timeExpression} = ${boundary}`,
+                _.t = solved.evaluateToFloat(solved).get();
+                _.derivative = solved.evaluateToFloat(derivative, {t: _.t}).get();
+                if (_.derivative === undefined)
+                    return undefined;
+                // as in: does it escape the bounds?
+                _.isEscape = boundaryType == 'lower' ? _.derivative < 0 : _.derivative > 0; 
+                return _;
+            })
+            .filter(obj => obj !== undefined);
+
+    }
+
+    // Split a [*] b <- c [*] d to { source: c [*] d, target: a [*] b }, or
+    // split a [*] b -> c [*] d to { source: a [*] b, target: c [*] d }
+    splitFuncToSourceAndTarget (func) {
+        
+        let [ sources, targets ] = 
+            func.includes('<-') ? func.split('<-').reverse()
+            : func.includes('->') ? func.split('->')
+            : null;
+
+        return { sources, targets };
+
+    }
+
+}
 
 let funcs = [
     '2*happiness <- metal^2 + 2*energy',
@@ -79,239 +318,14 @@ let funcs = [
     '1.5*rock <- 7*metal + energy' // TODO: adding this gives an error
 ]
 
-let sources = [];
-let targets = [];
+let wfp = new worldFunctionProcessor(world, funcs);
 
-for (let func of funcs) {
-    let parts = splitFuncToSourceAndTarget(func);
-    sources.push(`(${parts.sources})`);
-    targets.push(`(${parts.targets})`);
-}
-
-let mainFunc = sources.join(' + ') + ' <- ' + targets.join(' + ');
 
 // TODO: find min escape time of all caughts.
 // Increment t by that time.
 // Then find out how to make appropriate withdrawals and deposits.
-console.log(mainFunc);
-let caughts = catchFromFunc(mainFunc);
-console.log([...caughts].map(c => c.firstEscape));
-
-function catchFromFunc(func) {
-
-    let { sources, targets } = splitFuncToSourceAndTarget(func);
-
-    let propFinder = /[A-Z,a-z,_]+/g;
-    let props = [
-        ...sources.match(propFinder).map(propName => ({ type: 'source', propName })),
-        ...targets.match(propFinder).map(propName => ({ type: 'target', propName }))
-    ];
-
-    let caughts = new Set();
-
-    for (let p of props)
-    for (let w of world) 
-        if (w[p.propName] !== undefined)
-            caughts.add({ 
-                ...p, 
-                getCaughtObj: () => w, 
-                getCaughtProp: () => w[p.propName]
-            });
-
-    _catchFromFunc_calcFlowAndRemainFuncs(caughts);
-    _catchFromFunc_applyTimeSubstitutions(caughts, func);
-    return caughts;
-
-}
-
-// Stage 1: calculate flowFuncs (stabilized flowRates) and remainFuncs
-function _catchFromFunc_calcFlowAndRemainFuncs (caughts) {
-    for (let c of caughts) {
-
-        let prop = c.getCaughtProp();
-
-        c.flowFunc = prop.flowRate || prop.value.toString();
-
-        if (c.type == 'source') {
-            c.remainFunc = prop.value.toString();
-            if (prop.flowRate !== undefined) 
-                c.remainFunc += ' - ' + prop.flowRate;
-        }
-
-    }
-};
-
-// Stage 2: Calculate 'inTermsOf' equations by substituting the time 
-// equations for all variables with their time-based equivalents, save
-// the given caught object, which you're trying to solve for.  
-function _catchFromFunc_applyTimeSubstitutions (caughts, func) {
-        
-    let { sources, targets } = splitFuncToSourceAndTarget(func);
-    for (let c of caughts) {
-
-        let _sources = sources;
-        let _targets = targets;
-        let cp = c.getCaughtProp();
-
-        let timeSubstitutions = 
-            fd(caughts)
-            .group(c2 => ({  
-                type: c2.type, 
-                propName: c2.propName 
-            })) 
-            .reduce(({ // combine caughts within type/propNames via '+'
-                type: fd.first(c2 => c2.type),
-                propName: fd.first(c2 => c2.propName),
-                part: (agg,next) => 
-                    agg + 
-                    (agg == '' ? '' : ' + ') +
-                    (c === next ? c.propName : next.flowFunc), 
-                ['part.seed']: ''
-            }))
-            .map(p => ({ // add parens around type/propName substitutions 
-                type: p.type,
-                propName: p.propName, 
-                part: `(${p.part})`
-            })) 
-            .get();
-
-        for (let timeSub of timeSubstitutions) {
-            let propRx = new RegExp(timeSub.propName,'ig');
-            if (timeSub.type == 'source')
-                _sources = _sources.replace(propRx, timeSub.part);
-            else if (timeSub.type == 'target')
-                _targets = _targets.replace(propRx, timeSub.part);
-        }
-
-        c.timeSubstitutions = `${_sources} = ${_targets}`;
-
-        // This can have more than one solution.  
-        c.timeFuncs = 
-            solver(c.timeSubstitutions)
-            .solveFor(c.propName)
-            .get()
-            .map(tf => tf.toString());
-
-        // Of the c.timeFuncs, get the earliest times value escapes caught boundaries.
-        // When multiple solutions exist, eliminate any that are not applicable.
-        // If it is already out of bounds at t = 0, it is not applicable.
-        let tfFirstEscapes = 
-            c.timeFuncs
-            .map(tf => getFirstEscape(tf, cp))
-            .filter(fe => fe != 0);
-
-        // Of the applicable solutions, find the earliest escape time.
-        // If no solutions are applicable, set the earliest escape time to 0.
-        let tfFirstEscape = 
-            tfFirstEscapes.length == 0 ? 0 : Math.min(...tfFirstEscapes);
-
-        // boundaries imposed by the giving object
-        let remainFirstEscape =     
-            c.remainFunc 
-            ? getFirstEscape(c.remainFunc, cp)
-            : Infinity;
-
-        c.firstEscape = Math.min(tfFirstEscape, remainFirstEscape);
-        
-    }
-
-}
-
-// TODO: maybe getBoundaaryTimes can be subsumed w/in getFirstEscape
-// and _getBoundaryTimes renamed to getBoundaryTimes.
-
-// Get the earliest (current or future) time at which the 
-// timeFunction will go out of bounds with respect to 
-// boundNum lower and upper limits. 
-function getFirstEscape (
-    timeFunction,
-    boundNum 
-) {
-
-    // If timeFunc isn't even in bounds at t = 0, return '0' to indicate 
-    // that you can't make use of the equation even a little bit.
-    let t0val = solver(timeFunction).evaluateToFloat({t: 0}).get();
-    if (t0val === undefined) return 0; 
-    if (t0val < boundNum.lower) return 0;
-    if (t0val > boundNum.upper) return 0;
-
-    let tfFirstEscape = 
-        fd(getBoundaryTimes(timeFunction, boundNum))
-        .filter(bt => bt.t >= 0 && bt.isEscape) 
-        .sort(bt => bt.t)
-        .reduce(fd.first(bt => bt.t))
-        .get();            
-
-    return   tfFirstEscape === 0 ? 0
-            : tfFirstEscape === undefined ? Infinity
-            : tfFirstEscape === null ? Infinity
-            : tfFirstEscape;
- 
-}
-
-function getBoundaryTimes(
-    timeExpression,
-    boundProp
-) {
-
-    let boundaryTimes = []; 
-
-    if (boundProp.lower !== -Infinity && boundProp.lower !== Infinity)
-        boundaryTimes.push(
-            ..._getBoundaryTimes(timeExpression, boundProp.lower, 'lower')
-        );
-
-    if (boundProp.upper !== -Infinity && boundProp.upper !== Infinity)
-        boundaryTimes.push(
-            ..._getBoundaryTimes(timeExpression, boundProp.upper, 'upper')
-        );
-
-    return boundaryTimes;
-
-}
-
-function _getBoundaryTimes (
-    timeExpression, // the time (t) based expression
-    boundary, // the constraint value
-    boundaryType // 'lower' or 'upper'
-) {
-
-    let derivative = solver(`diff( ${timeExpression}, t )`);
-
-// TODO: Lots of repeats.  Definite chance to increase performance
-console.log(timeExpression)
-
-    return solver(`${timeExpression} = ${boundary}`)
-        .solveFor('t')
-        .get()
-        .map(solved => {
-            solved = solver.fromNerdamerObj(solved);
-            let _ = {};
-            _.equation = `${timeExpression} = ${boundary}`,
-            _.t = solved.evaluateToFloat(solved).get();
-            _.derivative = solved.evaluateToFloat(derivative, {t: _.t}).get();
-            if (_.derivative === undefined)
-                return undefined;
-            // as in: does it escape the bounds?
-            _.isEscape = boundaryType == 'lower' ? _.derivative < 0 : _.derivative > 0; 
-            return _;
-        })
-        .filter(obj => obj !== undefined);
-
-}
-
-// Split a [*] b <- c [*] d to { source: c [*] d, target: a [*] b }, or
-// split a [*] b -> c [*] d to { source: a [*] b, target: c [*] d }
-function splitFuncToSourceAndTarget (func) {
-    
-    let [ sources, targets ] = 
-        func.includes('<-') ? func.split('<-').reverse()
-        : func.includes('->') ? func.split('->')
-        : null;
-
-    return { sources, targets };
-
-}
+console.log(wfp.func);
+console.log([...wfp.caughts].map(c => c.firstEscape));
 
 
 /*
