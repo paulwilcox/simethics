@@ -150,7 +150,12 @@ class worldFunctionProcessor {
     // equations for all variables with their time-based equivalents, save
     // the given caught object, which you're trying to solve for.  
     applyTimeSubstitutions () {
-            
+
+        let sources = this.sources.join(' + ');
+        let targets = this.targets.join(' + ');    
+
+console.log({sources, targets})
+
         for (let c of this.caughts) {
 
             let timeSubstitutions = 
@@ -174,9 +179,6 @@ class worldFunctionProcessor {
                     part: `(${p.part})`
                 })) 
                 .get();
-
-            let sources = this.sources.join(' + ');
-            let targets = this.targets.join(' + ');
     
             for (let timeSub of timeSubstitutions) {
                 let propRx = new RegExp(timeSub.propName,'ig');
@@ -189,7 +191,7 @@ class worldFunctionProcessor {
             c.timeSubstitutions = `${sources} = ${targets}`;
 
 // TODO: Lots of repeats.  Definite chance to increase performance
-console.log(c.timeSubstitutions);
+//console.log(c.timeSubstitutions);
 
         }
 
