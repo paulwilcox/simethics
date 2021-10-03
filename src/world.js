@@ -194,9 +194,6 @@ class worldFunctionProcessor {
 
             c.timeSubstitutions = `${_sources} = ${_targets}`;
 
-// TODO: Lots of repeats.  Definite chance to increase performance
-//console.log(c.timeSubstitutions);
-
         }
 
     }
@@ -205,12 +202,17 @@ class worldFunctionProcessor {
 
         for (let c of this.caughts) {
 
+console.log({ ts: c.timeSubstitutions })
+
+// TODO: this is the performance issue
             // This can have more than one solution.  
             c.timeFuncs = 
                 solver(c.timeSubstitutions)
                 .solveFor(c.propName)
-                .get()
-                .map(tf => tf.toString());
+                //.get()
+                //.map(tf => tf.toString());
+
+continue;
 
             // Of the c.timeFuncs, get the earliest times value escapes caught boundaries.
             // When multiple solutions exist, eliminate any that are not applicable.
@@ -232,7 +234,7 @@ class worldFunctionProcessor {
                 : Infinity;
 
             c.firstEscape = Math.min(tfFirstEscape, remainFirstEscape);
-            
+          
         }
 
     }
@@ -318,6 +320,24 @@ class worldFunctionProcessor {
 
 }
 
+let f = 
+    '(2*happiness) + (-0.25*happiness) + (1.5*rock) = (metal^2 + 2*energy) + (0.5*rock) + (7*metal + energy)';
+
+let slv = (prop) => console.log(
+    solver(f).solveFor(prop).get().map(tf => prop + ' = ' + tf.toString())
+);
+
+// solving before time substitutions seems to be much faster
+slv('metal');
+slv('energy');
+slv('rock');
+slv('happiness');
+
+
+return;
+
+
+
 let funcs = [
     '2*happiness <- metal^2 + 2*energy',
     '-0.25*happiness <- 0.5*rock',
@@ -330,8 +350,8 @@ let wfp = new worldFunctionProcessor(world, funcs);
 // TODO: find min escape time of all caughts.
 // Increment t by that time.
 // Then find out how to make appropriate withdrawals and deposits.
-console.log(wfp.func);
-console.log([...wfp.caughts].map(c => c.firstEscape));
+//console.log(wfp.func);
+//console.log([...wfp.caughts].map(c => c.firstEscape));
 
 
 /*
