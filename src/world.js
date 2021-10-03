@@ -98,9 +98,12 @@ class worldFunctionProcessor {
             targets.push(`(${parts.targets})`);
         }
         
+        sources = sources.join(' + ');
+        targets = targets.join(' + ');
+
         return {
-            func: sources.join(' + ') + ' <- ' + targets.join(' + '),
-            sources,
+            func: `${sources} -> ${targets}`, 
+            sources, 
             targets
         };
 
@@ -110,8 +113,8 @@ class worldFunctionProcessor {
 
         let propFinder = /[A-Z,a-z,_]+/g;
         let props = [
-            ...this.sources.map(src => ({ type: 'source', propName: src.match(propFinder) })),
-            ...this.targets.map(trg => ({ type: 'target', propName: trg.match(propFinder) }))
+            ...this.sources.match(propFinder).map(propName => ({ type: 'source', propName })),
+            ...this.targets.match(propFinder).map(propName => ({ type: 'target', propName }))
         ];
 
         let caughts = new Set();
@@ -151,12 +154,10 @@ class worldFunctionProcessor {
     // the given caught object, which you're trying to solve for.  
     applyTimeSubstitutions () {
 
-        let sources = this.sources.join(' + ');
-        let targets = this.targets.join(' + ');    
-
-console.log({sources, targets})
-
         for (let c of this.caughts) {
+
+            let _sources = this.sources;
+            let _targets = this.targets;
 
             let timeSubstitutions = 
                 fd(this.caughts)
@@ -183,12 +184,12 @@ console.log({sources, targets})
             for (let timeSub of timeSubstitutions) {
                 let propRx = new RegExp(timeSub.propName,'ig');
                 if (timeSub.type == 'source')
-                    sources = sources.replace(propRx, timeSub.part);
+                    _sources = _sources.replace(propRx, timeSub.part);
                 else if (timeSub.type == 'target')
-                    targets = targets.replace(propRx, timeSub.part);
+                    _targets = _targets.replace(propRx, timeSub.part);
             }
 
-            c.timeSubstitutions = `${sources} = ${targets}`;
+            c.timeSubstitutions = `${_sources} = ${_targets}`;
 
 // TODO: Lots of repeats.  Definite chance to increase performance
 //console.log(c.timeSubstitutions);

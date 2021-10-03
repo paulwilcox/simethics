@@ -106,7 +106,7 @@ function catchFromFunc(func) {
         ...sources.match(propFinder).map(propName => ({ type: 'source', propName })),
         ...targets.match(propFinder).map(propName => ({ type: 'target', propName }))
     ];
-
+    
     let caughts = new Set();
 
     for (let p of props)
@@ -116,7 +116,7 @@ function catchFromFunc(func) {
                 ...p, 
                 getCaughtObj: () => w, 
                 getCaughtProp: () => w[p.propName]
-            });
+            });            
 
     _catchFromFunc_calcFlowAndRemainFuncs(caughts);
     _catchFromFunc_applyTimeSubstitutions(caughts, func);
@@ -147,7 +147,6 @@ function _catchFromFunc_calcFlowAndRemainFuncs (caughts) {
 function _catchFromFunc_applyTimeSubstitutions (caughts, func) {
         
     let { sources, targets } = splitFuncToSourceAndTarget(func);
-console.log({func, sources, targets})
 
     for (let c of caughts) {
 
