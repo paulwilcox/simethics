@@ -112,23 +112,26 @@ class worldFunctionProcessor {
     catchProperties() {
 
         let propFinder = /[A-Z,a-z,_]+/g;
-        let props = [
-            ...this.sources.match(propFinder).map(propName => ({ type: 'source', propName })),
-            ...this.targets.match(propFinder).map(propName => ({ type: 'target', propName }))
-        ];
+        let props = 
+            fd([
+                ...this.sources.match(propFinder).map(propName => ({ type: 'source', propName })),
+                ...this.targets.match(propFinder).map(propName => ({ type: 'target', propName }))
+            ])
+            .distinct()
+            .get();
 
-        let caughts = new Set();
+        let caughts = [];
 
         for (let p of props)
         for (let w of this.world) 
             if (w[p.propName] !== undefined)
-                caughts.add({ 
+                caughts.push({ 
                     ...p, 
                     getCaughtObj: () => w, 
                     getCaughtProp: () => w[p.propName]
                 });
 
-        return [...caughts];
+        return caughts;
 
     }
 
