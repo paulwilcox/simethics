@@ -9,6 +9,11 @@ class _solver {
         this.value = obj;
     }
 
+    simplify() {
+        this.value = nerdamer(`simplify(${this.value})`);
+        return this;
+    }
+
     solveFor(...args) {
         this.value = this.value.solveFor(...args);
         return this;
