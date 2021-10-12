@@ -29,7 +29,7 @@ world.push(...[
     },
     { 
         name: 'Aaron', 
-        happiness: n(0).l(-100).u(100).f('10t'), 
+        happiness: n(0).l(-100).u(100).f('5t'), 
         energy: n(35).l(0).u(100).f('5t') 
     }, 
 
@@ -82,127 +82,6 @@ class worldFunctionProcessor {
 
         this.caughts = this.catchProperties();                
         this.setFlowAndRemainFuncs();
-
-
-
-let propFinder = /[A-Z,a-z,_]+/g;
-let props = 
-    fd([
-        ...this.sources.match(propFinder).map(propName => ({ isSource: 1, propName })),
-        ...this.targets.match(propFinder).map(propName => ({ isTarget: 1, propName }))
-    ])
-    .group(p => p.propName)
-    .reduce(({
-        propName: fd.first(p => p.propName),
-        isSource: (agg,next) => agg || next.isSource || 0,
-        isTarget: (agg,next) => agg || next.isTarget || 0
-    }))
-    .map(p => {
-
-        let propName = p.propName;
-
-        let inTermsOf =         
-            solver(this.func.replace('->', '='))
-            .solveFor(p.propName)
-            .get()
-            .map(f => `${p.propName} = ${f}`);
-
-        let caughts = 
-            this.world 
-            .filter(obj => obj[p.propName] != undefined)
-            .map(obj => { 
-                let prop = obj[p.propName];
-                return {
-                    flowFunc: prop.flowRate || prop.value.toString(),
-                    remainFunc:
-                          !p.isSource ? undefined
-                        : prop.flowRate === undefined ? prop.value.toString()
-                        : `${prop.value} - ${prop.flowRate}`,
-                    getCaughtObj: () => obj,
-                    getCaughtProp: () => prop
-                }
-            });
-
-        let propTimeSubber = (caughtProp) => 
-            fd(caughts)
-            .filter(c => c.getCaughtProp() !== caughtProp)
-            .reduce({
-                flowFunc: (agg,next) => `${agg}${agg == '' ? '' : ' + '}(${next.flowFunc})`,
-                ['flowFunc.seed']: ''
-            }) 
-            .get()
-            .flowFunc;
-
-        return { propName, inTermsOf, propTimeSubber, caughts };
-
-    })
-    .get();
-
-    for (let prop of props) {
-            
-        prop.inTermsOfTimeSubbeds = prop.inTermsOf;
-
-        for (let compare of props) {
-            let rx = new RegExp(compare.propName, 'g');
-            if (prop === compare)
-                continue;
-            for(let i in prop.inTermsOf) {
-                let timeSubbed = 
-                    prop.inTermsOfTimeSubbeds[i]
-                    .replace(rx, compare.propTimeSubber());
-                prop.inTermsOfTimeSubbeds[i] = timeSubbed;
-            }
-        }
-
-        for (let c of prop.caughts) {
-
-            // Get the earliest time that a function escapes caught prop boundaries.
-            // When multiple solutions exist, eliminate any that are not applicable.
-            // If it is already out of bounds at t = 0, it is not applicable.
-            c.timeFuncs = [];
-            c.firstEscape = null;
-            for (let itot of prop.inTermsOfTimeSubbeds) {
-
-// TODO: The difference between new and old code I think probably comes
-// down to the decision makde here.
-                let timeSubbed = 
-                    itot.substring(itot.indexOf('=') + 1) 
-                    + ' - (' + prop.propTimeSubber(c.getCaughtProp()) + ')';
-                
-                c.timeFuncs.push(timeSubbed);
-
-                let tEscapeTime = this.getFirstEscape(timeSubbed, c.getCaughtProp());
-
-                if (tEscapeTime != 0 && (c.firstEscape == null || tEscapeTime < c.firstEscape))
-                    c.firstEscape = tEscapeTime;
-
-            }
-
-            // If no first escape solutions are applicable, set the earliest escape time to 0.
-            if (c.firstEscape == null)
-                c.firstEscape = 0;
-
-            // boundaries imposed by the giving object
-            if (c.remainFunc) {
-                let remainEscape = this.getFirstEscape(c.remainFunc, c.getCaughtProp());
-                if (remainEscape < c.firstEscape)
-                    c.firstEscape = remainEscape;
-            }
-
-        }
-
-    }
-
-
-//console.log(props)
-//console.log(props[1].caughts[0])
-console.log(
-    props.flatMap(p => p.caughts.map(c => c.firstEscape))
-)
-
-//throw ''
-
-
         this.applyTimeSubstitutions();
         this.calculateFirstEscapes();
 
@@ -464,7 +343,15 @@ let funcs = [
 ]
 
 let wfp = new worldFunctionProcessor(world, funcs);
-console.log('old', wfp.caughts.map(c => c.firstEscape))
+console.log('old', 
+    wfp.caughts
+    .filter(c => isFinite(c.firstEscape))
+    .map(c => ({
+        pn: c.propName,
+        fe: c.firstEscape,
+        tss: c.timeSubstitutions
+    }))
+)
 
 // TODO: find min escape time of all caughts.
 // Increment t by that time.
