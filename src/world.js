@@ -74,11 +74,10 @@ class worldFunctionProcessor {
     ) {
 
         this.world = world;
-
-        let merged = this.mergeFunctions(worldFuncs);
-        this.func = merged.func;
-        this.sources = merged.sources;
-        this.targets = merged.targets;
+        this.func = '';
+        this.sources = '';
+        this.targets = '';
+        this.mergeFunctions(worldFuncs);
 
         this.caughts = this.catchProperties();                
         this.setFlowAndRemainFuncs();
@@ -98,14 +97,9 @@ class worldFunctionProcessor {
             targets.push(`(${parts.targets})`);
         }
         
-        sources = sources.join(' + ');
-        targets = targets.join(' + ');
-
-        return {
-            func: `${sources} -> ${targets}`, 
-            sources, 
-            targets
-        };
+        this.sources = sources.join(' + ');
+        this.targets = targets.join(' + ');
+        this.func = `${this.sources} -> ${this.targets}`;
 
     }
 
@@ -114,10 +108,15 @@ class worldFunctionProcessor {
         let propFinder = /[A-Z,a-z,_]+/g;
         let props = 
             fd([
-                ...this.sources.match(propFinder).map(propName => ({ type: 'source', propName })),
-                ...this.targets.match(propFinder).map(propName => ({ type: 'target', propName }))
+                ...this.sources.match(propFinder).map(propName => ({ propName, isSource: true })),
+                ...this.targets.match(propFinder).map(propName => ({ propName, isTarget: true }))
             ])
-            .distinct()
+            .group(p => p.propName)
+            .reduce({
+                propName: fd.first(p => p.propName),
+                isSource: (agg,next) => agg || next.isSource,
+                isTarget: (agg,next) => agg || next.isTarget
+            })
             .get();
 
         let caughts = [];
@@ -143,12 +142,12 @@ class worldFunctionProcessor {
 
             c.flowFunc = prop.flowRate || prop.value.toString();
 
-            if (c.type == 'source') {
+            if (c.isSource) {
                 c.remainFunc = prop.value.toString();
                 if (prop.flowRate !== undefined) 
                     c.remainFunc += ' - ' + prop.flowRate;
             }
-
+        
         }
     }
 
@@ -164,10 +163,11 @@ class worldFunctionProcessor {
 
             let timeSubstitutions = 
                 fd(this.caughts)
-                .group(c2 => ({  
-                    type: c2.type, 
-                    propName: c2.propName 
-                })) 
+                .map(c2 => ({ 
+                    ...c2, 
+                    type: c2.isSource ? 'source' : 'target'
+                }))
+                .group(c2 => [c2.type,c2.propName]) 
                 .reduce(({ // combine caughts within type/propNames via '+'
                     type: fd.first(c2 => c2.type),
                     propName: fd.first(c2 => c2.propName),
@@ -183,7 +183,9 @@ class worldFunctionProcessor {
                     part: `(${p.part})`
                 })) 
                 .get();
-    
+
+console.log(timeSubstitutions)
+
             for (let timeSub of timeSubstitutions) {
                 let propRx = new RegExp(timeSub.propName,'ig');
                 if (timeSub.type == 'source')
@@ -194,6 +196,9 @@ class worldFunctionProcessor {
 
             c.timeSubstitutions = `${_sources} = ${_targets}`;
 
+console.log(c.timeSubstitutions);
+throw c.propName
+            
         }
 
     }
@@ -202,9 +207,7 @@ class worldFunctionProcessor {
 
         for (let c of this.caughts) {
 
-//console.log({ ts: c.timeSubstitutions })
-
-// TODO: this is the performance issue
+            // TODO: this is the performance issue
             // This can have more than one solution.  
             c.timeFuncs = 
                 solver(c.timeSubstitutions)
@@ -318,38 +321,18 @@ class worldFunctionProcessor {
 
 }
 
-/*
-let f = 
-    '(2*happiness) + (-0.25*happiness) + (1.5*rock) = (metal^2 + 2*energy) + (0.5*rock) + (7*metal + energy)';
-
-let slv = (prop) => console.log(
-    solver(f).solveFor(prop).get().map(tf => prop + ' = ' + tf.toString())
-);
-
-// solving before time substitutions seems to be much faster
-slv('metal');
-slv('energy');
-slv('rock');
-slv('happiness');
-
-return;
-*/
-
-
 let funcs = [
     '2*happiness <- metal^2 + 2*energy',
     '-0.25*happiness <- 0.5*rock',
-    '1.5*rock <- 7*metal + energy' // TODO: adding this gives an error
+    '1.5*rock <- 7*metal + energy' 
 ]
 
 let wfp = new worldFunctionProcessor(world, funcs);
-console.log('old', 
+console.log(
     wfp.caughts
-    .filter(c => isFinite(c.firstEscape))
     .map(c => ({
         pn: c.propName,
         fe: c.firstEscape,
-        tss: c.timeSubstitutions
     }))
 )
 
