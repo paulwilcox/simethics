@@ -29,7 +29,7 @@ world.push(...[
     },
     { 
         name: 'Aaron', 
-        happiness: n(0).l(-100).u(100).f('10t'), 
+        happiness: n(0).l(-100).u(100).f('5t'), 
         energy: n(35).l(0).u(100).f('5t') 
     }, 
 
@@ -73,299 +73,245 @@ class worldFunctionProcessor {
         worldFuncs // an array of directional functions (eg. 'w + x <- y + z'
     ) {
 
-        this.world = world;
+        this.world = world;        
+        this.func = this.mergeAndParseFunctions(worldFuncs);
+        this.caughtProps = []; 
+        this.catchProperties(this.world, this.func);                
 
-        let merged = this.mergeFunctions(worldFuncs);
-        this.func = merged.func;
-        this.sources = merged.sources;
-        this.targets = merged.targets;
+        // calibrate the caught prop flow functions
+        for (let c of this.caughtProps) {
 
-        this.caughts = this.catchProperties();                
-        this.setFlowAndRemainFuncs();
+            let prop = c.getProperty();
+            let propStrVal = prop.value.toString();
 
+            c.flowFunc = prop.flowRate || propStrVal;
+            c.remainFunc = 
+                !c.getParentVariable().isSource ? undefined
+                : prop.flowRate === undefined ? propStrVal
+                : `${propStrVal} - ${prop.flowRate}`;
 
-
-let propFinder = /[A-Z,a-z,_]+/g;
-let props = 
-    fd([
-        ...this.sources.match(propFinder).map(propName => ({ isSource: 1, propName })),
-        ...this.targets.match(propFinder).map(propName => ({ isTarget: 1, propName }))
-    ])
-    .group(p => p.propName)
-    .reduce(({
-        propName: fd.first(p => p.propName),
-        isSource: (agg,next) => agg || next.isSource || 0,
-        isTarget: (agg,next) => agg || next.isTarget || 0
-    }))
-    .map(p => {
-
-        let propName = p.propName;
-
-        let inTermsOf =         
-            solver(this.func.replace('->', '='))
-            .solveFor(p.propName)
-            .get()
-            .map(f => `${p.propName} = ${f}`);
-
-        let caughts = 
-            this.world 
-            .filter(obj => obj[p.propName] != undefined)
-            .map(obj => { 
-                let prop = obj[p.propName];
-                return {
-                    flowFunc: prop.flowRate || prop.value.toString(),
-                    remainFunc:
-                          !p.isSource ? undefined
-                        : prop.flowRate === undefined ? prop.value.toString()
-                        : `${prop.value} - ${prop.flowRate}`,
-                    getCaughtObj: () => obj,
-                    getCaughtProp: () => prop
-                }
-            });
-
-        let propTimeSubber = (caughtProp) => 
-            fd(caughts)
-            .filter(c => c.getCaughtProp() !== caughtProp)
-            .reduce({
-                flowFunc: (agg,next) => `${agg}${agg == '' ? '' : ' + '}(${next.flowFunc})`,
-                ['flowFunc.seed']: ''
-            }) 
-            .get()
-            .flowFunc;
-
-        return { propName, inTermsOf, propTimeSubber, caughts };
-
-    })
-    .get();
-
-    for (let prop of props) {
-            
-        prop.inTermsOfTimeSubbeds = prop.inTermsOf;
-
-        for (let compare of props) {
-            let rx = new RegExp(compare.propName, 'g');
-            if (prop === compare)
-                continue;
-            for(let i in prop.inTermsOf) {
-                let timeSubbed = 
-                    prop.inTermsOfTimeSubbeds[i]
-                    .replace(rx, compare.propTimeSubber());
-                prop.inTermsOfTimeSubbeds[i] = timeSubbed;
-            }
         }
 
-        for (let c of prop.caughts) {
+        // variable-level flow func summing equations
+        let flowFuncSummators = this.func.variables.map(v => ({
+            variableName: v.name,
+            flowFuncSum: 
+                '(' + 
+                    v.caughtProps
+                    .map(p => `(${p.flowFunc})`)
+                    .join('+') + 
+                ')'
+        }));
+
+        // Time-replace variable-level functions with the appropriate summing equations.
+        // This will replace everything on the right-hand side, preserving the left hand
+        // variable for later parsing at the property-level.  
+        for(let v of this.func.variables)
+        for(let vf in v.funcs) {
+            let timeReplaced = v.funcs[vf];
+            for(let ffs of flowFuncSummators) {
+                if (v.name === ffs.variableName)
+                    continue;
+                timeReplaced = timeReplaced.replace(
+                    new RegExp(ffs.variableName,'g'),
+                    ffs.flowFuncSum
+                ); 
+            }
+            v.funcs[vf].timeReplaced = timeReplaced;
+        }
+
+        // Time-replace property-level functions with the appropriate summing equations
+        for (let c of this.caughtProps) {
+
+            let v = c.getParentVariable();
+            let timeFuncs = [];
+            let ffOfOthersSummator = 
+                '(' + 
+                    v.caughtProps
+                    .filter(cp => cp != c)
+                    .map(cp => `(${cp.flowFunc})`)
+                    .join(' + ') + 
+                ')';
+
+            for (let vFunc of v.funcs) {
+                let timeReplaced = vFunc.timeReplaced;
+                timeReplaced = timeReplaced.replace(
+                    new RegExp(v.name,'g'),
+                    c.flowFunc
+                );
+                timeReplaced += ' - ' + ffOfOthersSummator;
+                timeFuncs.push(timeReplaced);
+            }
+
+            c.timeFuncs = timeFuncs;
+
+        }
+        
+        // For each caught property, get the earliest positive time for which the 
+        // function would resut in the value of the property going out of own boundaries 
+        for (let c of this.caughtProps) {
+
+            let firstEscape = null;
+            let prop = c.getProperty();
 
             // Get the earliest time that a function escapes caught prop boundaries.
             // When multiple solutions exist, eliminate any that are not applicable.
             // If it is already out of bounds at t = 0, it is not applicable.
-            c.timeFuncs = [];
-            c.firstEscape = null;
-            for (let itot of prop.inTermsOfTimeSubbeds) {
-
-// TODO: The difference between new and old code I think probably comes
-// down to the decision makde here.
-                let timeSubbed = 
-                    itot.substring(itot.indexOf('=') + 1) 
-                    + ' - (' + prop.propTimeSubber(c.getCaughtProp()) + ')';
-                
-                c.timeFuncs.push(timeSubbed);
-
-                let tEscapeTime = this.getFirstEscape(timeSubbed, c.getCaughtProp());
-
-                if (tEscapeTime != 0 && (c.firstEscape == null || tEscapeTime < c.firstEscape))
-                    c.firstEscape = tEscapeTime;
-
+            for (let tFunc of c.timeFuncs) {
+                let tEscapeTime = this.getFirstEscape(tFunc, prop);
+                if (tEscapeTime != 0 && (firstEscape == null || tEscapeTime < firstEscape))
+                    firstEscape = tEscapeTime;
             }
 
             // If no first escape solutions are applicable, set the earliest escape time to 0.
-            if (c.firstEscape == null)
-                c.firstEscape = 0;
+            if (firstEscape == null)
+                firstEscape = 0;
 
             // boundaries imposed by the giving object
             if (c.remainFunc) {
-                let remainEscape = this.getFirstEscape(c.remainFunc, c.getCaughtProp());
-                if (remainEscape < c.firstEscape)
-                    c.firstEscape = remainEscape;
+                let remainEscape = this.getFirstEscape(c.remainFunc, prop);
+                if (remainEscape < firstEscape)
+                    firstEscape = remainEscape;
             }
+
+            c.firstEscape = firstEscape;
 
         }
 
-    }
-
-
-//console.log(props)
-//console.log(props[1].caughts[0])
-console.log(
-    props.flatMap(p => p.caughts.map(c => c.firstEscape))
-)
-
-//throw ''
-
-
-        this.applyTimeSubstitutions();
-        this.calculateFirstEscapes();
+        // TODO: Uncatch some properties.  
+        //  - For each variabe, uncatch any properties with a firstEscape = 0.
+        //  - If any variable no longer has caught properties, the whole merged function cannot be activated.
+        //  - Else, find the global firstEscape, use that as the time to move forward.
+        //  - Start focusing on how to move forward by transferring value between properties. 
+        console.log(this.caughtProps.map(c => ({ 
+            name: c.getParentVariable().name, 
+            firstEscape: fd.round(c.firstEscape, 1e-4)
+        })));
 
     }
 
-    mergeFunctions(funcs) {
+    /* 
+
+        Requires an array of arrow-style functions (e.g. 'x + y -> x + w')
+
+        Returns a string representing the merged function.  This string is an 
+        object with the following subproperties.
+        
+            sources:        A string representing the part of the merged function 
+                            with the source variables. 
+            targets:        A string representing the part of the merged function 
+                            with the target variables.
+            variables:      An array of objects continaing information about each
+                            variable in the function. 
+                        
+        The structure of each variable is as follows: 
+            
+            name:           The name of the variable.. 
+            caughtProps:    An array with references to any caught world properties
+                            that can be associated with the variable name.  It 
+                            starts out as empty but gets filled when properties are
+                            caught.
+            isSource:       True if the variable is an input to the function. 
+            isTarget:       False if the variable is an output of the function. 
+            funcs:          The merged function solved in terms of the variable.
+                            It is an array because many solutions may be possible, 
+                            but very frequently it will only have one element.
+        
+    */
+    mergeAndParseFunctions(funcs) {
 
         let sources = [];
         let targets = [];
 
         for (let func of funcs) {
-            let parts = this.splitFuncToSourceAndTarget(func);
-            sources.push(`(${parts.sources})`);
-            targets.push(`(${parts.targets})`);
+            let parts = 
+                func.includes('<-') ? func.split('<-').reverse()
+                : func.includes('->') ? func.split('->')
+                : null;
+            sources.push(`(${parts[0]})`);
+            targets.push(`(${parts[1]})`);
         }
         
         sources = sources.join(' + ');
         targets = targets.join(' + ');
 
-        return {
-            func: `${sources} -> ${targets}`, 
-            sources, 
-            targets
-        };
+        let func = new String(`${sources} -> ${targets}`); 
+        func.sources = sources;
+        func.targets = targets; 
+        
+        let getVarFromString = (str,type) => 
+            str
+            .match(/[A-Z,a-z,_]+/g)
+            .map(name => ({ name, type }));
 
-    }
-
-    catchProperties() {
-
-        let propFinder = /[A-Z,a-z,_]+/g;
-        let props = 
+        func.variables = 
             fd([
-                ...this.sources.match(propFinder).map(propName => ({ type: 'source', propName })),
-                ...this.targets.match(propFinder).map(propName => ({ type: 'target', propName }))
+                ...getVarFromString(sources, 'source'),
+                ...getVarFromString(targets, 'targers')
             ])
-            .distinct()
+            .group(v => v.name)
+            .reduce(({
+                name: fd.first(v => v.name),
+                caughtProps: fd.first(v => []),
+                isSource: (agg,next) => !!agg || next.type === 'source',
+                isTarget: (agg,next) => !!agg || next.type === 'target'
+            }))
             .get();
 
-        let caughts = [];
-
-        for (let p of props)
-        for (let w of this.world) 
-            if (w[p.propName] !== undefined)
-                caughts.push({ 
-                    ...p, 
-                    getCaughtObj: () => w, 
-                    getCaughtProp: () => w[p.propName]
-                });
-
-        return caughts;
-
-    }
-
-    // Stage 1: establish flowFuncs (stabilized flowRates) and remainFuncs
-    setFlowAndRemainFuncs () {
-        for (let c of this.caughts) {
-
-            let prop = c.getCaughtProp();
-
-            c.flowFunc = prop.flowRate || prop.value.toString();
-
-            if (c.type == 'source') {
-                c.remainFunc = prop.value.toString();
-                if (prop.flowRate !== undefined) 
-                    c.remainFunc += ' - ' + prop.flowRate;
-            }
-
-        }
-    }
-
-    // Stage 2: Establish 'inTermsOf' equations by substituting the time 
-    // equations for all variables with their time-based equivalents, save
-    // the given caught object, which you're trying to solve for.  
-    applyTimeSubstitutions () {
-
-        for (let c of this.caughts) {
-
-            let _sources = this.sources;
-            let _targets = this.targets;
-
-            let timeSubstitutions = 
-                fd(this.caughts)
-                .group(c2 => ({  
-                    type: c2.type, 
-                    propName: c2.propName 
-                })) 
-                .reduce(({ // combine caughts within type/propNames via '+'
-                    type: fd.first(c2 => c2.type),
-                    propName: fd.first(c2 => c2.propName),
-                    part: (agg,next) => 
-                        agg + 
-                        (agg == '' ? '' : ' + ') +
-                        (c === next ? c.propName : next.flowFunc), 
-                    ['part.seed']: ''
-                }))
-                .map(p => ({ // add parens around type/propName substitutions 
-                    type: p.type,
-                    propName: p.propName, 
-                    part: `(${p.part})`
-                })) 
-                .get();
-    
-            for (let timeSub of timeSubstitutions) {
-                let propRx = new RegExp(timeSub.propName,'ig');
-                if (timeSub.type == 'source')
-                    _sources = _sources.replace(propRx, timeSub.part);
-                else if (timeSub.type == 'target')
-                    _targets = _targets.replace(propRx, timeSub.part);
-            }
-
-            c.timeSubstitutions = `${_sources} = ${_targets}`;
-
-        }
-
-    }
-
-    calculateFirstEscapes() {
-
-        for (let c of this.caughts) {
-
-//console.log({ ts: c.timeSubstitutions })
-
-// TODO: this is the performance issue
-            // This can have more than one solution.  
-            c.timeFuncs = 
-                solver(c.timeSubstitutions)
-                .solveFor(c.propName)
+        // Functions from the perspective of the variable.
+        // Usually just one, but the solution could produce more than one.
+        for (let v of func.variables) 
+            v.funcs =          
+                solver(func.replace('->', '='))
+                .solveFor(v.name)
                 .get()
-                .map(tf => tf.toString());
+                .map(f => new String(`${v.name} = ${f}`));
 
-            // Of the c.timeFuncs, get the earliest times value escapes caught boundaries.
-            // When multiple solutions exist, eliminate any that are not applicable.
-            // If it is already out of bounds at t = 0, it is not applicable.
-            let tfFirstEscapes = 
-                c.timeFuncs
-                .map(tf => this.getFirstEscape(tf, c.getCaughtProp()))
-                .filter(fe => fe != 0);
+        return func;
 
-            // Of the applicable solutions, find the earliest escape time.
-            // If no solutions are applicable, set the earliest escape time to 0.
-            let tfFirstEscape = 
-                tfFirstEscapes.length == 0 ? 0 : Math.min(...tfFirstEscapes);
+    }
 
-            // boundaries imposed by the giving object
-            let remainFirstEscape =     
-                c.remainFunc 
-                ? this.getFirstEscape(c.remainFunc, c.getCaughtProp())
-                : Infinity;
+    /* 
 
-            c.firstEscape = Math.min(tfFirstEscape, remainFirstEscape);
-          
-        }
+        Summary:    Matches world properties to the relevant variables in a 
+                    function.  These are then found in the caughtProps field
+                    in the worldFunctionProcessor as well as the caughtProps
+                    field of each variable name.  
+                    
+        Remarks:    The matches in the caughtProps fields aren't the properties
+                    themselves.  Rather, they're helper objects for working 
+                    with them.  They have the following properties.
 
+                    getProperty:        Get the property that is relevant to
+                                        the function in question.
+                    getParentVariable:  Get the variable in the function that 
+                                        is related to the caught property.    
+                    getParentObject:    Get the world object that the caught
+                                        property is a part of. 
+
+    */
+    catchProperties(world, mergedFunction) {
+        for (let v of mergedFunction.variables)
+        for (let obj of world) 
+            if (obj[v.name] !== undefined) {
+                let prop = { 
+                    getProperty: () => obj[v.name],
+                    getParentVariable: () => v, 
+                    getParentObject: () => obj
+                };
+                this.caughtProps.push(prop);
+                v.caughtProps.push(prop);
+            }
     }
 
     // Get the earliest (current or future) time at which the 
     // timeFunction will go out of bounds with respect to 
-    // boundNum lower and upper limits. 
+    // boundNum's lower and upper limits. 
     getFirstEscape (
         timeFunction,
         boundNum 
     ) {
-
+    
         // If timeFunc isn't even in bounds at t = 0, return '0' to indicate 
         // that you can't make use of the equation even a little bit.
         let t0val = solver(timeFunction).evaluateToFloat({t: 0}).get();
@@ -373,88 +319,74 @@ console.log(
         if (t0val < boundNum.lower) return 0;
         if (t0val > boundNum.upper) return 0;
 
-        let boundaryTimes = []; 
-        if (boundNum.lower !== -Infinity && boundNum.lower !== Infinity)
-            boundaryTimes.push(
-                ...this.getBoundaryTimes(timeFunction, boundNum.lower, 'lower')
-            );
-        if (boundNum.upper !== -Infinity && boundNum.upper !== Infinity)
-            boundaryTimes.push(
-                ...this.getBoundaryTimes(timeFunction, boundNum.upper, 'upper')
-            );
+        // if boundNum boundary makes all possible values out of bounds, 
+        // return '0' to indicate that you can't make use of the equation
+        // even a little bit.  Yes, infinite boundNum values might work but
+        // unless I see a reason to support these, I'm ignoring them.
+        if (boundNum.lower === Infinity || boundNum.upper === -Infinity)
+            return 0;
 
-        let tfFirstEscape = 
-            fd(boundaryTimes)
-            .filter(bt => bt.t >= 0 && bt.isEscape) 
-            .sort(bt => bt.t)
-            .reduce(fd.first(bt => bt.t))
+        // Allow escape times function to work with infinite boundaries
+        let getEscapeTimesForBoundary = (boundary, boundaryType) => 
+              boundary == undefined ? [] // there is no boundary, all values would work
+            : !isFinite(boundary) ? [] // basically there is no boundary
+            : this.getEscapeTimesForFiniteBoundary(timeFunction, boundary, boundaryType);
+
+        // Get all times that timeFunction crosses the lower and upper boundaries
+        let escapeTimes = [
+            ...getEscapeTimesForBoundary(boundNum.lower, 'lower'),
+            ...getEscapeTimesForBoundary(boundNum.upper, 'upper'),
+            Infinity 
+        ];
+
+        return fd(escapeTimes)
+            .filter(et => et >= 0) // we don't worry about going back in time
+            .sort(et => et)
+            .reduce(fd.first(et => et)) 
             .get();            
-
-        return   tfFirstEscape === 0 ? 0
-                : tfFirstEscape === undefined ? Infinity
-                : tfFirstEscape === null ? Infinity
-                : tfFirstEscape;
     
     }
 
-    getBoundaryTimes (
-        timeExpression, // the time (t) based expression
+    // Gets the time-values at which a time-based function touches the upper or 
+    // lower boundary (as appropriate) of a boundNum.  Then, if this touch 
+    // represents a move to escape a boundary, it outputs the time value.
+    getEscapeTimesForFiniteBoundary (
+        timeFunction, // the time (t) based function (will be parsed to only include right side)
         boundary, // the constraint value
         boundaryType // 'lower' or 'upper'
     ) {
 
-        let derivative = solver(`diff( ${timeExpression}, t )`);
+        let timeExpression = timeFunction.replace(/^.+=/, ''); 
+        let differential = solver(`diff( ${timeExpression}, t )`);
+        let solvedForTs = solver(`${timeExpression} = ${boundary}`).solveFor('t').get();
+        let escapeTimes = [];
 
-        return solver(`${timeExpression} = ${boundary}`)
-            .solveFor('t')
-            .get()
-            .map(solved => {
-                solved = solver.fromNerdamerObj(solved);
-                let _ = {};
-                _.equation = `${timeExpression} = ${boundary}`,
-                _.t = solved.evaluateToFloat(solved).get();
-                _.derivative = solved.evaluateToFloat(derivative, {t: _.t}).get();
-                if (_.derivative === undefined)
-                    return undefined;
-                // as in: does it escape the bounds?
-                _.isEscape = boundaryType == 'lower' ? _.derivative < 0 : _.derivative > 0; 
-                return _;
-            })
-            .filter(obj => obj !== undefined);
+        for (let solvedForT of solvedForTs) {
+            
+            solvedForT = solver.fromNerdamerObj(solvedForT);
+            let t = solvedForT.evaluateToFloat(solvedForT).get();
+            let derivative = solvedForT.evaluateToFloat(differential, {t}).get();
+            
+            if (derivative === undefined)
+                continue;
+            
+            // When t touches the boundary, is it really escaping the bounds?
+            // Or is it just touching or entering?
+            let isEscape = 
+                boundaryType == 'lower' 
+                ? derivative < 0 
+                : derivative > 0; 
+            
+            if (isEscape)
+                escapeTimes.push(t);
 
-    }
+        }
 
-    // Split a [*] b <- c [*] d to { source: c [*] d, target: a [*] b }, or
-    // split a [*] b -> c [*] d to { source: a [*] b, target: c [*] d }
-    splitFuncToSourceAndTarget (func) {
-        
-        let [ sources, targets ] = 
-            func.includes('<-') ? func.split('<-').reverse()
-            : func.includes('->') ? func.split('->')
-            : null;
-
-        return { sources, targets };
+        return escapeTimes;
 
     }
 
 }
-
-/*
-let f = 
-    '(2*happiness) + (-0.25*happiness) + (1.5*rock) = (metal^2 + 2*energy) + (0.5*rock) + (7*metal + energy)';
-
-let slv = (prop) => console.log(
-    solver(f).solveFor(prop).get().map(tf => prop + ' = ' + tf.toString())
-);
-
-// solving before time substitutions seems to be much faster
-slv('metal');
-slv('energy');
-slv('rock');
-slv('happiness');
-
-return;
-*/
 
 
 let funcs = [
@@ -464,7 +396,6 @@ let funcs = [
 ]
 
 let wfp = new worldFunctionProcessor(world, funcs);
-console.log('old', wfp.caughts.map(c => c.firstEscape))
 
 // TODO: find min escape time of all caughts.
 // Increment t by that time.
