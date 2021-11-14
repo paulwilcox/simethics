@@ -21,7 +21,7 @@ world.push(...[
 
     { metal: n(50).l(0).f('2t'), rock: n(100).l(0).f('0.5t') },
     { metal: n(25).l(0).f('2t'), rock: n(50).l(0).f('0.5t') },
-    
+
     { 
         name: 'Ariceli', 
         happiness: n(0).l(-100).u(100).f('10t'), 
@@ -179,10 +179,14 @@ class worldFunctionProcessor {
         }
 
         // TODO: Uncatch some properties.  
-        //  - For each variabe, uncatch any properties with a firstEscape = 0.
+        //  - For each variable, uncatch any properties with a firstEscape = 0.
         //  - If any variable no longer has caught properties, the whole merged function cannot be activated.
         //  - Else, find the global firstEscape, use that as the time to move forward.
-        //  - Start focusing on how to move forward by transferring value between properties. 
+        //  - Start focusing on how to move forward by transferring value between properties.
+        // TODO: Different values and constraints on metal cannot force a firstEscape <> infinity.  
+        //  - Instead, it just changes the first escape of happiness.  Why?
+        // TODO: I don't think when we uncatch properties we kill the whole merged function.
+        //  - Perhaps we just set flow rates to 0 and reprocess? 
         console.log(this.caughtProps.map(c => ({ 
             name: c.getParentVariable().name, 
             firstEscape: fd.round(c.firstEscape, 1e-4)
