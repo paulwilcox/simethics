@@ -56,38 +56,43 @@ We identify patterns in our sets to create conceptual and instinctual 'objects'
   perhaps synnonymously), objects can be defined by a 'building' rule as opposed to just
   an explicit listing of perceptions and other objects.
 - Objects don't have to be conscious, though I am biased to speak of them as such.
+- Our motivation for creating these objects initially comes from how intense pleasure and
+  pain couples with other perceptions, to create objects with pain and pleasure as elements.
+  But it is also advantageous to create objects without pain and pleasure as elements in 
+  order to couple them, as a whole, to pain and pleasure or to other objects with pain
+  and pleasure.
+- The 'element of' operation of set-theory doesn't exist in our instinctive apparati.  
+  For us, it is non recursive.  So given 'A: { x, B: { y, z } }', mathematically it would
+  be inaccurate for us to say 'z is an element of A'.  Rather, we should say, 'z is 
+  an element of an element of A'.  But our minds are more easily  capable of the former.
+  Vulnerabilites such as this shouldn't change the theory of the ideal.  But it should 
+  change the theory of the practical.   
+- Perceptive sets that are very close to created objects can be represented downward 
+  (ignoring elements) or upward (adding elements).  
 
 We can put placeholders in our sets
 
-- Perceptive sets that are very close to created objects can be represented downward 
-  (ignoring elements) or upward (adding elements).  
-    * This is reflexive imagination 
-    * A fuller form of imagination in line with our understanding of it comes with 'control',
-      described later.
-    * When 'time' as a concept is understood, and imagination is applied, the 'future' can be 
-      constructed.
-- A 'placeholder' is possible in an object.
-    * An abstraction may seem to be in order, but the best one might be ambiguous:
-    * Imagine an infant encoutering the following objects
-        > needle: { 'pointy', 'silver', 'pain' }, 
-        > knife: { 'flat', 'silver', 'pain' }
-        > spoon: { 'round', 'silver', 'pleasure' }
-        > plate: { 'round', 'flat', 'white', 'pleasure' }
-        > finger: { 'pointy', 'peachy', 'pleasure' }
-    * This infant best not be afraid of all silver things, but best be afraid of some silver 
-      things.  And yet, in seeking the completion to { 'silver', ..., 'pain' }, neither 
-      'pointy' nor 'flat' is appropriate becasue they can lead to pleasurable things.
-    * A { 'silver', null, 'pain' } could possiby be created and sometimes can be useful.
-      But novel perceptive-sets with 'silver' and some other property might easily not lead
-      to pain, making the set with the placeholder weak in terms of utility.
-    * A { 'silver', { 'pointy' or 'flat' }, 'pain' } object would be more useful.  
-    * A { 'silver', not-'round', 'pain' } object would also be more useful, and far more 
-      efficient if the ambiguity is with mroe than just two items.  
-    * But a 'not' element can but doesn't have to bring up perceptions to the mind.  It can
-      be 'blank' or 'dark' in the mind but still be useful.  This is a 'placeholder'.
-    * Placeholders aren't just from 'not' elements, that was just an example of how to
-      come to one.  
-    * TODO: maybe a better or added exmaple that isn't 'not' based.    
+- An abstraction may seem to be in order, but the best one might be ambiguous:
+- Imagine an infant encoutering the following objects
+    > needle: { 'pointy', 'silver', 'pain' }, 
+    > knife: { 'flat', 'silver', 'pain' }
+    > spoon: { 'round', 'silver', 'pleasure' }
+    > plate: { 'round', 'flat', 'white', 'pleasure' }
+    > finger: { 'pointy', 'peachy', 'pleasure' }
+- This infant best not be afraid of all silver things, but best be afraid of some silver 
+    things.  And yet, in seeking the completion to { 'silver', ..., 'pain' }, neither 
+    'pointy' nor 'flat' is appropriate becasue they can lead to pleasurable things.
+- A { 'silver', null, 'pain' } could possiby be created and sometimes can be useful.
+    But novel perceptive-sets with 'silver' and some other property might easily not lead
+    to pain, making the set with the placeholder weak in terms of utility.
+- A { 'silver', { 'pointy' or 'flat' }, 'pain' } object would be more useful.  
+- A { 'silver', not-'round', 'pain' } object would also be more useful, and far more 
+    efficient if the ambiguity is with mroe than just two items.  
+- But a 'not' element can but doesn't have to bring up perceptions to the mind.  It can
+    be 'blank' or 'dark' in the mind but still be useful.  This is a 'placeholder'.
+- Placeholders aren't just from 'not' elements, that was just an example of how to
+    come to one.  
+- TODO: maybe a better or added exmaple that isn't 'not' based.    
 
 We discover that we have 'control' over some perceptions, and not others.
 
@@ -119,7 +124,7 @@ We discover that we have 'control' over some perceptions, and not others.
   furthermore has no direct 'knowledge' of the nature of the control-primitive that gave rise
   to it. 
 
-'Self' is no new construct.  It is merely an 'object', though one of special interest:
+'Self' is no new class.  It is merely an 'object', though one of special interest:
 
 - We initially create it out of the perceptions that couple with pleasure and pain.
 - Example: An infant has created the 'long', 'thin', 'silver', 'soft' mental categories.  It 
@@ -134,16 +139,36 @@ We discover that we have 'control' over some perceptions, and not others.
 - Example: At a more advanced stage an infant will understand 'hair'.  But needles and other 
   objects (scissors) don't cause pain in 'hair'.  Nevertheless, 'hair' is accepted as part of 
   'self' because of other properties it shares with 'self' elements.       
+- The object of 'self' is the best strategy in pleasure/pain optimization.  It's past success 
+  leaves it fairly rigid and hard to change.  It's continued success requres that it be 
+  changeable nevertheless, as different ways to identify the self may be more successful and 
+  the present way may have some drawbacks (i.e. defining the 'self' as being 'always nice to 
+  others' can work well in early years but lead to disrespect from others if never modified).
+- We learn that other objects have similar properties as our 'self' does, and that the most 
+  successful way to work with these other objects is to understand that they behave, in 
+  very simiar ways to our own 'selves'.
+
+'Imagination' is no new ability.
+
+- The already-defined act of creating objects by adding new elements to old objects and taking 
+  away elements from old objets is at least an instinctive imagination done as a reflex.
+- Add to that the 'control' defined above, apply it to this ability to create objects which 
+  before 'control' was just reflexive, and you have an imaginative capacity in the fuller 
+  sense.
+
+'Reality' is no new class.
 
 
-which leads to the
-  category of 'self'.  The category of self is a good strategy in pleasure/pain optimization.  It's past 
-  success leaves it fairly rigid and hard to change.  It's continued success requres that it be changeable
-  nevertheless, as different ways to identify the self may be more successful and the present way may have 
-  some drawbacks (i.e. defining the 'self' as being 'always nice to others' can work well in early years 
-  but lead to disrespect from others if never modified).
-- We learn that other categories seem to behave as our 'self' does, and so we come to learn that other 
-  selves exist.  
+
+'Time' is no new class.  
+
+- When 'time' as a concept is understood, and imagination is applied, the 'future' can be 
+    constructed.
+
+
+
+
+
 - We learn that some of our categories persist, but evolve, over time.  Peripheral properties change, but
   core ones remain stable.  This causes us to recognize a past self and to anticipate a future self.  
 - We can intelectually identify with things, or we can additionally motivationally identify with them.  
@@ -153,8 +178,6 @@ which leads to the
 - The birth of ethics is when, in addition to expanding our identity to our future self, we also expand it
   to have concern for the pain and pleasure of the other 'selves'.  
   
-
-TODO: some thoughts below might better be subsumed into earlier points, then re-referenced.
 
 This happens for the following reasons:
     * One self has learned that the consideration of the pleasure of other selves causes them to in turn 
