@@ -19,13 +19,16 @@ non-exotic logic (i.e. simple mathematics, set-theory, and modern logic).
 
 ## From neural-networks to set-theory
 
-- TODO: Investigate whether I should be working with category-theory or neural networks
-  from the start
-- TODO: If not, then explain how really this involves neural networks, but these can be 
-  translated to (fuzzy) logic and set-theory, and the latter is easier to theorize with 
-  and to develop an axiomatic system for.
+- TODO: Explain how really this involves neural networks, but these can be translated 
+  to (fuzzy) logic and set-theory, and the latter is easier to theorize with and to 
+  develop an axiomatic system for.
 
 ## The Origin
+
+### Primitives
+
+TODO: Is the reliance on perceptive set too strong here?  Seems that objects in the perceptive
+  set can be mixed in with non-perceptive objects.  
 
 Our perceptions constitute a simple set 
 
@@ -92,11 +95,21 @@ We can put placeholders in our sets
     be 'blank' or 'dark' in the mind but still be useful.  This is a 'placeholder'.
 - Placeholders aren't just from 'not' elements, that was just an example of how to
     come to one.  
-- TODO: maybe a better or added exmaple that isn't 'not' based.    
+- TODO: maybe a better or added exmaple that isn't 'not' based.  
+- TODO: Account for the need to use identifiers to distinguish placeholders.
+- TODO: Placeholders can be pointers to other objects.  This may be important in 'habits'
+  later as it permits the benefits of including an object in another object without 
+  invoking the full force of the object (e.g. if one object has a control-primitive, 
+  including it in another object would invoke that control, wheras a placeholder will 
+  only provide the link to that control-including object without invoking the 
+  control-primitive). 
 
 We discover that we have 'control' over some perceptions, and not others.
 
-- We simply desire a change in perception, and it happens.
+- We simply desire a change in perception, and it happens.  This is either by a new perception
+  directly entering a set (memory/imagination), or by an object in the real-world able to be
+  influenced by us in turn changing other aspects of the outside world that influence our 
+  perception (but we do not initially know 'memory', 'imagination', or 'the outside world').
 - The origin of this control is not consiously known.  
 - The actions required to cause a change are often too complex for this stage to handle.  So
   reflexes are in-built that allow the plural actions to act as one.  
@@ -123,8 +136,56 @@ We discover that we have 'control' over some perceptions, and not others.
   A control-primitive initiates action in the real world.  A control-abstraction does not and 
   furthermore has no direct 'knowledge' of the nature of the control-primitive that gave rise
   to it. 
+- A control-primitive can also be a control-blocker.  In other words, a control-primitive can 
+  be applied to another control-primitive and have the effect of blocking the latter.
 
-'Self' is no new class.  It is merely an 'object', though one of special interest:
+We have 'habits'
+
+- When we create objects, there is a process that stores these, and a process that recalls them.
+- Storage is simple.  A set exists of stored objects.  This exists outside of the perceptive 
+  set.  Any object can be stored, including ones with explicit perceptions, set-builder logic 
+  that can invoke other perceptions, control-primitives that when recalled would invoke  
+- Recall is a pattern matching reation that takes items from our perceptive set as input, 
+  invokes an object in storage as throughput, and places it into our perceptive set as output.  
+- Two tracks to this object activation:
+    * An object full of new perceptions not in the current perceptive set is manifested.
+    * An object full of existing perceptions found in the current perceptive set is created.
+    * And of course there is the hybrid path
+- Remember that objects can have control-primitives.  Which cause habits in the traditional
+  sense of the term (which involves actions).  But stored objects without control-primitives 
+  (such as memories) I will call habits as well.
+
+### Composites
+
+'Imagination' is not a new class.
+
+- The already-defined act of creating objects by adding new elements to old objects and taking 
+  away elements from old objets is at least an instinctive imagination done as a reflex.
+- Add to that the control-primitive defined above, apply it to this ability to create objects 
+  which before 'control' was just reflexive, and you have an imaginative capacity in the fuller 
+  sense.
+
+'Reality' is not a new class.
+
+- Objects in our perceptive set can have elements with strongly-weighted perceptions, and 
+  elements with weakly-weighted perceptions.  
+- We learn that properties often cluster by this weighting.  And we are motivated to learn
+  that because pleasure and pain is included in this clustering behavior.
+- A 'strength-in-perception' placeholder is created that allows us to imagine 
+  strongly percieved objects even though they are not strongly-percieved.  
+- We later learn that there are in fact objects with strong perceptions and ones with 
+  weak perceptions that behave differently than we expect.  So we know that there is 
+  'something' that is strongly related to 'strength-in-perception' but is not exactly 
+  equal to it.  'There-is-something' is synnonimous with having created a placeholder.
+  This is the 'reality' placeholder.  It later gets converted into an object with a 
+  placeholder in it, as we learn more things that we are comfortable including in 'reality'.
+
+'Time' is not a new class.  
+
+- When 'time' as a concept is understood, and imagination is applied, the 'future' can be 
+    constructed.
+
+'Self' is not a new class.
 
 - We initially create it out of the perceptions that couple with pleasure and pain.
 - Example: An infant has created the 'long', 'thin', 'silver', 'soft' mental categories.  It 
@@ -148,22 +209,6 @@ We discover that we have 'control' over some perceptions, and not others.
   successful way to work with these other objects is to understand that they behave, in 
   very simiar ways to our own 'selves'.
 
-'Imagination' is no new ability.
-
-- The already-defined act of creating objects by adding new elements to old objects and taking 
-  away elements from old objets is at least an instinctive imagination done as a reflex.
-- Add to that the 'control' defined above, apply it to this ability to create objects which 
-  before 'control' was just reflexive, and you have an imaginative capacity in the fuller 
-  sense.
-
-'Reality' is no new class.
-
-
-
-'Time' is no new class.  
-
-- When 'time' as a concept is understood, and imagination is applied, the 'future' can be 
-    constructed.
 
 
 
@@ -179,12 +224,33 @@ We discover that we have 'control' over some perceptions, and not others.
   to have concern for the pain and pleasure of the other 'selves'.  
   
 
-This happens for the following reasons:
+- ... This happens for the following reasons:
     * One self has learned that the consideration of the pleasure of other selves causes them to in turn 
       consider his/her own pleasure.
     * One self has expanded his/her identity to include other selves directly, so that the pleasure or
       pain of the other self immediately causes pleasure or pain in the self.
     * One self has other selves as an interest, but not identity.  
+
+'Interest', 'Meaning', and 'Value' are not new classes
+
+### Conjectures
+
+Consciousness IS a new class
+
+- It has been proposed that consciousness has something to do with the ability to form a concept
+  of 'self' or to reflect on oneself.  Does a grasshopper or a nat have a sense of self?  If not, are they 
+  not conscious?  Seems hard to believe, and certainly hard to say with confidence that they are zombies. 
+- Consider the jhanas.  In the analysis above, it seems their effect is basically to unwrap all
+  objects, then then to eliminate everything from the perceptive set.  And yet it seems there's 
+  still consciousness there (is the goal of the meditator doing this really to have the same 
+  effect as non-consciousness?).  So it cannot be described in terms of any of the primitives 
+  or composites described here, which inclues 'self' and many other things.
+- Maybe it is necessitated (but not fully explained) by the fact that 'member-of' operations are
+  not efficient in the pattern matching operations described.  A 'recursive-member-of' operation
+  is required.  But for that to be efficient, the members need to be unwrapped.  Furthermore, 
+  they cannot be unwrapped in a way that double counts the perceptions when the same ones occur
+  in different objects.  So a keeping-track of the inputs needs to occur, and percetive
+  consciousness might be the space that houses that. 
 
 ## Happiness for just some or all other 'selves'?
 
