@@ -29,6 +29,8 @@ non-exotic logic (i.e. simple mathematics, set-theory, and modern logic).
 
 TODO: Is the reliance on perceptive set too strong here?  Seems that objects in the perceptive
   set can be mixed in with non-perceptive objects.  
+TODO: 'ordering' was defined late in this game.  As a result, 'habits' is poory defined, and in 
+  turn I"m having trouble with 'time'. 
 
 Our perceptions constitute a simple set 
 
@@ -72,6 +74,33 @@ We identify patterns in our sets to create conceptual and instinctual 'objects'
   change the theory of the practical.   
 - Perceptive sets that are very close to created objects can be represented downward 
   (ignoring elements) or upward (adding elements).  
+
+Objects can be ordered sets
+
+- This might happen in different ways.  I don't want to commit to it being one way or the 
+  other.  So I declare ordering here primitively.
+- But, it might not be primitive.  Mathematically, ordered sets aren't primitive.  But 
+  the way ordering derives neurolgically is probably not the way ordering is typicaly
+  derived in set-theory.  
+
+TODO: Objects can be incomplete
+
+We have 'habits'
+
+- When we create objects, there is a process that stores these, and a process that recalls them.
+- Storage is simple.  A set exists of stored objects.  This exists outside of the perceptive 
+  set.  Any object can be stored, including ones with explicit perceptions, set-builder logic 
+  that can invoke other perceptions, control-primitives that when recalled would invoke action,
+  orderings.  
+- Recall is a pattern matching reaction that takes items from our perceptive set as input, 
+  invokes an object in storage as throughput, and places it into our perceptive set as output.  
+- Two tracks to this object activation:
+    * An object full of new perceptions not in the current perceptive set is manifested.
+    * An object full of existing perceptions found in the current perceptive set is created.
+    * And of course there is the hybrid path
+- Later, we define control-primitives.  Habits can store these, which allows 'habits' to take
+  on their traditional sense (which involves actions).  But stored objects without 
+  control-primitives (such as memories) I will call habits as well.
 
 We can put placeholders in our sets
 
@@ -139,31 +168,7 @@ We discover that we have 'control' over some perceptions, and not others.
 - A control-primitive can also be a control-blocker.  In other words, a control-primitive can 
   be applied to another control-primitive and have the effect of blocking the latter.
 
-We have 'habits'
-
-- When we create objects, there is a process that stores these, and a process that recalls them.
-- Storage is simple.  A set exists of stored objects.  This exists outside of the perceptive 
-  set.  Any object can be stored, including ones with explicit perceptions, set-builder logic 
-  that can invoke other perceptions, control-primitives that when recalled would invoke  
-- Recall is a pattern matching reation that takes items from our perceptive set as input, 
-  invokes an object in storage as throughput, and places it into our perceptive set as output.  
-- Two tracks to this object activation:
-    * An object full of new perceptions not in the current perceptive set is manifested.
-    * An object full of existing perceptions found in the current perceptive set is created.
-    * And of course there is the hybrid path
-- Remember that objects can have control-primitives.  Which cause habits in the traditional
-  sense of the term (which involves actions).  But stored objects without control-primitives 
-  (such as memories) I will call habits as well.
-
 ### Composites
-
-'Imagination' is not a new class.
-
-- The already-defined act of creating objects by adding new elements to old objects and taking 
-  away elements from old objets is at least an instinctive imagination done as a reflex.
-- Add to that the control-primitive defined above, apply it to this ability to create objects 
-  which before 'control' was just reflexive, and you have an imaginative capacity in the fuller 
-  sense.
 
 'Reality' is not a new class.
 
@@ -180,10 +185,39 @@ We have 'habits'
   This is the 'reality' placeholder.  It later gets converted into an object with a 
   placeholder in it, as we learn more things that we are comfortable including in 'reality'.
 
+'Imagination' is not a new class.
+
+- The already-defined act of creating objects by adding new elements to old objects and taking 
+  away elements from old objets is at least an instinctive imagination done as a reflex.
+- Add to that the control-primitive defined above, apply it to this ability to create objects.
+- Further apply the 'reality' object, in this case lowly-rated reality objects, to imagination
+  objects.
+- With this you have an imaginative capacity in the more traditional sense.
+- It should be mentioned that lowly-rated 'reality' is not mandatory.  Object-permanence, for
+  instance, is an example of imagination (creating objects via control-primitive), that has 
+  a highly-weighted 'reality' element.  
+
 'Time' is not a new class.  
+
+- habits involve 
+
+- Strongly-percieved objects lead to the formation of habits.
+- Habits, in turn, give rise to weakly-percieved objects (memories, though not yet known as 
+  such) that look like strongly percieved ones.
+- The latter correlate strongly with the former, in the sense that differences in the 
+  weakly-percieved objects become predictive of differences in their strongly-percieved 
+  counterparts in a way that the reverse is not true.
+- An ordering is identified with weakly-percieved objects preceding strongly-percieved ones.
+- The weakly-percieved objects are then recognized as 'past' and strongly percieved ones
+  as 'now'.
+
+
+
 
 - When 'time' as a concept is understood, and imagination is applied, the 'future' can be 
     constructed.
+
+'Identity' is not a new class.
 
 'Self' is not a new class.
 
