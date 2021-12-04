@@ -56,22 +56,50 @@ Our perceptions constitute a simple set
 
 We identify patterns in our sets to create conceptual and instinctual 'objects' 
 
-- These objects have core and peripheral perceptions involved, and are flexible.
-- At more advanced stages we can make 'categories' and 'abstractions', and relatedly (or 
-  perhaps synnonymously), objects can be defined by a 'building' rule as opposed to just
-  an explicit listing of perceptions and other objects.
-- Objects don't have to be conscious, though I am biased to speak of them as such.
-- Our motivation for creating these objects initially comes from how intense pleasure and
-  pain couples with other perceptions, to create objects with pain and pleasure as elements.
-  But it is also advantageous to create objects without pain and pleasure as elements in 
-  order to couple them, as a whole, to pain and pleasure or to other objects with pain
-  and pleasure.
-- The 'element of' operation of set-theory doesn't exist in our instinctive apparati.  
-  For us, it is non recursive.  So given 'A: { x, B: { y, z } }', mathematically it would
-  be inaccurate for us to say 'z is an element of A'.  Rather, we should say, 'z is 
-  an element of an element of A'.  But our minds are more easily  capable of the former.
-  Vulnerabilites such as this shouldn't change the theory of the ideal.  But it should 
-  change the theory of the practical.   
+TODO: Our objects then may need some complexities even beyond fuzzy sets.  There is the
+element identifier (standard set), weight of how present an element is in a set (fuzziness),
+and the weight of how important it is for the element to be in the set in the first place 
+(the added consideration beyond standard or fuzzy).  But, on second thought, maybe this can 
+be modeled with just two sets and a function:
+- Abstract object:
+    * Element identifier
+    * Element membership weight (how important it is to defining the abstract object)
+- Matched object:
+    * Element identifier
+    * Element membership weight (how associated it is with the current set)
+- Match success function
+    * = sum(abstract-weight * matched-weight) / elements
+    * Of course, the function doesn't have to exactly be this.  The critical point is the 
+      form: abstract-matched-successFunc 
+- Analysis object:
+    * We need to store this match-success-determiner somewhere that still associates it 
+      with the abstract and matched objects.
+    * { abstract object, matched object, match-success-value }
+    * Notice the latter is the value, not the function
+
+
+- The functional part:
+    * This 'identifying of patterns' is a (fuzzy) set-theoretical process
+    * It is important to model our desire to complete patterns (new discovery), to 
+      not complete them (medical diagnosis).  So it is not enough to just account for the 
+      ability to do it.  
+- The object part:
+    * These objects have core and peripheral perceptions involved, and are flexible.
+    * At more advanced stages we can make 'categories' and 'abstractions', and relatedly (or 
+      perhaps synnonymously), objects can be defined by a 'building' rule as opposed to just
+      an explicit listing of perceptions and other objects.
+    *  Objects don't have to be conscious, though I am biased to speak of them as such.
+    * Our motivation for creating these objects initially comes from how intense pleasure and
+      pain couples with other perceptions, to create objects with pain and pleasure as elements.
+      But it is also advantageous to create objects without pain and pleasure as elements in 
+      order to couple them, as a whole, to pain and pleasure or to other objects with pain
+      and pleasure.
+    * The 'element of' operation of set-theory doesn't exist in our instinctive apparati.  
+      For us, it is non recursive.  So given 'A: { x, B: { y, z } }', mathematically it would
+      be inaccurate for us to say 'z is an element of A'.  Rather, we should say, 'z is 
+      an element of an element of A'.  But our minds are more easily  capable of the former.
+      Vulnerabilites such as this shouldn't change the theory of the ideal.  But it should 
+      change the theory of the practical.   
 
 Objects can be ordered sets
 
@@ -81,33 +109,10 @@ Objects can be ordered sets
   the way ordering derives neurolgically is probably not the way ordering is typicaly
   derived in set-theory.  
 
-We have pattern-matching functions
-
-- Functions are prepared to build objects.  
-- These functions have a pattern-matching logic. 
-    * The perceptive subset is the domain, the space of possible objects are the range
-    * Members and objects with members matching the builder logic are selected and
-      the object is built. 
-    * Perceptive subsets that are very close to created objects can be represented 
-      downward (ignoring elements) or upward (adding elements).  
-- These functions are different from simple set-theoretical functions as follows:
-   * In set-theory, a function simply relates inputs to outputs.  If set-builder logic
-     does or doesn't produce an output, then that's it.
-   * But sentient functions seem to take special notice of how close you got to 
-     completion.  So if a function almost created an object, but one component of the 
-     logic prevented the creation, then pain or pleasure often corresponds to this.
-- We can 'store' these in the sample place as our perceptive set.  They can be used as
-  members in other objects.
-- If functions produce objects that are associated with pleasure or pain, the functions
-  themselves become associated with pleasure or pain.
-
-
-TODO: Objects can be incomplete, we have a desire to complete them
-
-
-
 We have 'habits'
 
+- TODO: Probably delete this after better defining the pattern-matching functions above, or 
+  move it to 'composite'.
 - When we create objects, there is a process that stores these, and a process that recalls them.
 - Storage is simple.  A set exists of stored objects.  This exists outside of the perceptive 
   set.  Any object can be stored, including ones with explicit perceptions, set-builder logic 
@@ -189,7 +194,7 @@ We discover that we have 'control' over some perceptions, and not others.
 - A control-primitive can also be a control-blocker.  In other words, a control-primitive can 
   be applied to another control-primitive and have the effect of blocking the latter.
 
-### Composites
+### Important Composites
 
 'Reality' is not a new class.
 
