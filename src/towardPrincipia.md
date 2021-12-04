@@ -72,8 +72,6 @@ We identify patterns in our sets to create conceptual and instinctual 'objects'
   an element of an element of A'.  But our minds are more easily  capable of the former.
   Vulnerabilites such as this shouldn't change the theory of the ideal.  But it should 
   change the theory of the practical.   
-- Perceptive sets that are very close to created objects can be represented downward 
-  (ignoring elements) or upward (adding elements).  
 
 Objects can be ordered sets
 
@@ -83,7 +81,30 @@ Objects can be ordered sets
   the way ordering derives neurolgically is probably not the way ordering is typicaly
   derived in set-theory.  
 
-TODO: Objects can be incomplete
+We have pattern-matching functions
+
+- Functions are prepared to build objects.  
+- These functions have a pattern-matching logic. 
+    * The perceptive subset is the domain, the space of possible objects are the range
+    * Members and objects with members matching the builder logic are selected and
+      the object is built. 
+    * Perceptive subsets that are very close to created objects can be represented 
+      downward (ignoring elements) or upward (adding elements).  
+- These functions are different from simple set-theoretical functions as follows:
+   * In set-theory, a function simply relates inputs to outputs.  If set-builder logic
+     does or doesn't produce an output, then that's it.
+   * But sentient functions seem to take special notice of how close you got to 
+     completion.  So if a function almost created an object, but one component of the 
+     logic prevented the creation, then pain or pleasure often corresponds to this.
+- We can 'store' these in the sample place as our perceptive set.  They can be used as
+  members in other objects.
+- If functions produce objects that are associated with pleasure or pain, the functions
+  themselves become associated with pleasure or pain.
+
+
+TODO: Objects can be incomplete, we have a desire to complete them
+
+
 
 We have 'habits'
 
