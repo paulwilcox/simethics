@@ -61,21 +61,76 @@ element identifier (standard set), weight of how present an element is in a set 
 and the weight of how important it is for the element to be in the set in the first place 
 (the added consideration beyond standard or fuzzy).  But, on second thought, maybe this can 
 be modeled with just two sets and a function:
-- Abstract object:
-    * Element identifier
-    * Element membership weight (how important it is to defining the abstract object)
-- Matched object:
-    * Element identifier
-    * Element membership weight (how associated it is with the current set)
-- Match success function
-    * = sum(abstract-weight * matched-weight) / elements
-    * Of course, the function doesn't have to exactly be this.  The critical point is the 
-      form: abstract-matched-successFunc 
-- Analysis object:
-    * We need to store this match-success-determiner somewhere that still associates it 
-      with the abstract and matched objects.
-    * { abstract object, matched object, match-success-value }
-    * Notice the latter is the value, not the function
+- Abstract object: 
+    * Element identifiers
+    * Element membership weights (how important it is to defining the abstract object)
+- Perceptive subset:
+    * Element identifiers
+    * Element membership weights (how associated it is with the perceptive subset)
+- Match success core function and associated algorithms
+    * Core function: = sum(abstract-weight * matched-weight) / elements
+    * Select from the perspective subset elements that maximize this core function
+    * The algorithm to do this needs heavy trimming to be efficient, but here's an example:
+        > For any abstract object, select the element with the heaviest membership weight, 
+          or if it's an ordered object, select the first element.
+        > From the perceptive subset, search for any matching element and take the one with 
+          the heaviest weight in the perceptive set.
+        > Calcuate the match success function and return a temporary value.
+        > If this temporary value reaches past a certain threshold (as determined by the 
+          learning process), repeat for the next heaviest element in the abstract object.
+          Otherwise, stop.  Do not output an object.  Or, if you output an object, mark 
+          it as incomplete, and apply the match success function of the previous successful
+          step (this would allow us to build an apparatus that models expectation).   How
+          incomplete is it?  Perhaps '=sum(matched abstract weights) / sum(remaining 
+          abstract weights)'.
+        > Stop on the final element of the Abstract Object.  Create an object out of the 
+          matched elements: we'll call this the 'matched object'.  Dump the matched object 
+          into the perceptive subset.  The final core function value acts as the memberhsip
+          weight of the matched object to the abstract object.
+
+- How are abstract objects made in the first place?
+    * The first iteration simply couples singular neutral elements with 
+      singular pleasure/pain elements.  This association can perhaps get a weight starting
+      at the weights of the elements multiplied by each other.  
+    * As the perceptive set changes, these weights get calibrated.  Intuitively, we would 
+      try to take all the perceptive sets in history (one set for each percieved instant),
+      extract each neutral element and it's weighting against the pain/pleasure element,
+      and take the average of these weightings.
+    * There are problems with this historical approach.  
+        > Immediately, we can see that it is computationally expensive.  So we can say that 
+          in reality the human mind probably only considers the most recent x events found 
+          in history.  But even going back 100 instances is very recent in history.  This 
+          implies that we would be very very forgetful.   
+        > Let's say an object (not yet seen as an object by the perciever) comes into 
+          perception ten times, once per day.  Every time it is strongly coupled with 
+          pleasure, and the perciever is exposed to the object for 1 second, save one time.  
+          For this exceptional time, the object is exposed to the perciever for 100 seconds, 
+          and it is not associated with pleasure.  Furthermore, this lengthened exposure is 
+          mere chance, it has nothing to do with the association (this is commonly the case 
+          in reality, the distinct exposures we get to an object, separated in time, is more 
+          informative than the length of a given exposure).  Given this, it is probably best 
+          that the perciever create an object that strongly associates the element with 
+          pleasure.  Yet the averaging described above would be strongly biased in favor of 
+          non-pleasure.  
+        > A sentient being likely has a means to percieve a change in situation.  We need
+          to model this.
+    * A change (beyond a threshold) in an element's weight in the perceptive set triggers a 
+      reanalysis in abstract-object of which it is a part.  It is these changes that get
+      registered into history, not the time instants.  These changes are far less frequent
+      than instants, don't require a rescanning of all objects at every instant, and better
+      correlate with real world object differences (though it's not exact, so the prediction
+      here would be that, expecially before object permanence is learned, objects hidden 
+      and then reshown trigger a reanalysis).  
+    * What's left is to decide where the history is stored.
+        > Neurologicaly, it's probably just the weightings themselves, and they can only
+          be calibrated slightly at a time.  So, something like 
+          'new-weight = bound(value: prev-weight + cur-weight / 5, min: 0, max: 1' 
+        > Something like that would allow the weighting to couple as the history itself.
+        > But if an idealistic modeling is needed, the weighting would need to become 
+          an entity that stores the history as well as the value.  The history would not 
+          be exposed to other objects, it is just there to calibrate the weighting on 
+          re-analysis. 
+
 
 
 - The functional part:
