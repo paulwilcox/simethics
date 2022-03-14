@@ -1,7 +1,29 @@
+/*
+    
+    Quality:   The identifier, distinguishes it from other objects in perception.
+    Quantity:  The amount an object has of itself.  Not really used yet.  Just there to
+               point out that it is different than clarity.
+    Clarity:   The degree to which an object is in perception.  I haven't decided whether
+               I seek a -1 to 1 scale or a 0 to 1 scale.
+    A Raw Perception: 
+        - Has no component elements.
+        - Has a well defined quality, quantity, and direct clarity.
+    An Object:
+        - Has component elements
+        - Ill defined quality, as the quality is the component elements
+        - Not sure if I consider it to have top level quantity yet
+        - Has clarity, defined by a cross between inner element clarities and raw perception 
+          clarities.  
+        - Component element clarities no longer represent level of perception.  Rather, 
+          they now represent level of membership in the object.  These get updated as well
+          based on cross with raw perception.
+
+*/
+
 let fd = require('fluent-data');
 
-let focusCount = 7; // upper bound
-let focusThreshold = 0.33; // lower bound.
+let clarityCount = 7; // How many objects can be held in perception
+let clarityThreshold = 0.33; // What level of clarity brings somethign into perception
 
 let elements = [
 
@@ -35,20 +57,37 @@ let objects = elements.filter(e => Object.keys(e).includes('elements'));
 let rawPerceptions = elements.filter(e => !Object.keys(e).includes('elements'));
 
 // Don't bother building an object if there would be no correlated pleasure.
-if (focusThreshold > pleasure.quantity * pleasure.clarity)
+if (clarityThreshold > pleasure.quantity * pleasure.clarity)
     return;
 
-// Bring an object into perception based on match to raw perceptions
 for (let o of objects) {
-    let matchSum = 0;
+
+    // The parent object's clarity is being updated
+    //  - This clarity represents how much the object is actually being percieved
+    //  - Child element clarities are multiplied by matched perceptive clarity
+    //    and the average of this is taken.
+    // Each child element's clarity is being updated
+    //  - This clarity represents how crucial the element is in representing the
+    //    parent object.
+    //  - Since I don't want to record an actual history, instead what I do is 
+    //    pretend as though I have 4 points in history that led to the child
+    //    element's value, and update the average to reflect the new 5th data point.
+    // TODO: This algorithm can't produce negative inner clarities
+    //  - Raw perceptions never have negative clarities
+    //  - Or, if we want 0-1 scale, this algorithm doesn't have a way to hold onto
+    //    a 0 clarity element and idenity it as important that it be that way 
+    //    (presently it is not important and subject to a garbage collection method)
+    let claritySumOfProds = 0;
     for (let e of o.elements) {
-        let p = rawPerceptions.find(p => p.quality == e.quality);
-        matchSum += e.clarity * (p.clarity || 0);
+        let rp = rawPerceptions.find(p => p.quality == e.quality);
+        claritySumOfProds += e.clarity * (rp.clarity || 0); // for the parent clarity
+        e.clarity = (e.clarity * 4 + rp.clarity) / 5; // for the inner clarities
     }
-    o.clarity = matchSum / o.elements.length;
+    o.clarity = claritySumOfProds / o.elements.length;
+
 }
 
-// TODO: reweight the inner clarities based on actual perceptions
+fd(objects[0].elements).log()
 
 return;
 
@@ -59,30 +98,10 @@ return;
 let _obj =
     fd(elements)
     .sort(e => -e.clarity)
-    .filter((e,i) => i < focusCount)
+    .filter((e,i) => i < clarityCount)
     .log();
 
-/*
-    A perception: 
-        - An identifier and a -1 to 1 numeric weight
-        - The weight being level of ACTUAL perception
-        -   1 meaning full perception, 
-            0 meaning neutral non-perception (extinction slow, might be present just not perceived),
-            -1 meaning explicit non-perception (extinction fast)
-    An object: 
-        - A complex of identifiers with weights.
-        - The weights being historically EXPECTED perception.
-        - A single overarching weight indicating ACTUAL perception
-        - History gets updated upon perception (and perhaps weighted by level of perception)
-*/
 
-/*
-
-    Quantity vs clarity:
-        - Algorithm to put them into an object may be the same for each
-        - Clarity reduces over time, quantity does not.
-
-*/
 
 
 
