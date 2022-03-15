@@ -25,7 +25,12 @@ let fd = require('fluent-data');
 let clarityCount = 7; // How many objects can be held in perception
 let clarityThreshold = 0.33; // What level of clarity brings somethign into perception
 
-let elements = [
+// TODO: The need to invoke control objects means that it is now time to make this 
+// a dynamic interaction between world and mind.  I think I have the clarity to start
+// that now.  
+// let world = ...
+
+let mind = [
 
     { quality: 'pleasure', quantity: 2, clarity: 0.75 }, // perception
     { quality: 'a', quantity: 2, clarity: 1 }, // perception
@@ -52,9 +57,9 @@ let elements = [
      
 ];
 
-let pleasure = elements.find(e => e.quality == 'pleasure');
-let objects = elements.filter(e => Object.keys(e).includes('elements'));
-let rawPerceptions = elements.filter(e => !Object.keys(e).includes('elements'));
+let pleasure = mind.find(e => e.quality == 'pleasure');
+let objects = mind.filter(e => Object.keys(e).includes('elements'));
+let rawPerceptions = mind.filter(e => !Object.keys(e).includes('elements'));
 
 // Object activation: existing latent objects are put put into clarity.
 // I may move the inner clarity algorithm to subsequent activation
@@ -70,14 +75,6 @@ for (let o of objects) {
     //  - Since I don't want to record an actual history, instead what I do is 
     //    pretend as though I have 4 points in history that led to the child
     //    element's value, and update the average to reflect the new 5th data point.
-    // TODO: This algorithm can't produce negative inner clarities
-    //  - Raw perceptions never have negative clarities
-    //  - Or, if we want 0-1 scale, this algorithm doesn't have a way to hold onto
-    //    a 0 clarity element and idenity it as important that it be that way 
-    //    (presently it is not important and subject to a garbage collection method)
-    //  - Review: I believe the algorighms work as-is if there are negative clarities
-    //    in the elements.  These can potentially be thrown in when I consider 
-    //    expectation management.
     let claritySumOfProds = 0;
     for (let e of o.elements) {
         let rp = rawPerceptions.find(p => p.quality == e.quality);
@@ -109,7 +106,7 @@ return;
 
 // create an object from scratch
 let _obj =
-    fd(elements)
+    fd(mind)
     .sort(e => -e.clarity)
     .filter((e,i) => i < clarityCount)
     .log();
