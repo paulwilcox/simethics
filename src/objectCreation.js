@@ -56,10 +56,8 @@ let pleasure = elements.find(e => e.quality == 'pleasure');
 let objects = elements.filter(e => Object.keys(e).includes('elements'));
 let rawPerceptions = elements.filter(e => !Object.keys(e).includes('elements'));
 
-// Don't bother building an object if there would be no correlated pleasure.
-if (clarityThreshold > pleasure.quantity * pleasure.clarity)
-    return;
-
+// Object activation: existing latent objects are put put into clarity.
+// I may move the inner clarity algorithm to subsequent activation
 for (let o of objects) {
 
     // The parent object's clarity is being updated
@@ -77,6 +75,9 @@ for (let o of objects) {
     //  - Or, if we want 0-1 scale, this algorithm doesn't have a way to hold onto
     //    a 0 clarity element and idenity it as important that it be that way 
     //    (presently it is not important and subject to a garbage collection method)
+    //  - Review: I believe the algorighms work as-is if there are negative clarities
+    //    in the elements.  These can potentially be thrown in when I consider 
+    //    expectation management.
     let claritySumOfProds = 0;
     for (let e of o.elements) {
         let rp = rawPerceptions.find(p => p.quality == e.quality);
@@ -87,12 +88,24 @@ for (let o of objects) {
 
 }
 
-fd(objects[0].elements).log()
+// Expectation Search: Of the activated objects, there will be a mismatch for some
+// of the inner elements.  Do a second search of raw perceptions to see if any 
+// are found.  If not found, throw a pseudo-raw-perception with negatie clarity
+// into the elements.  Basically, this models how expectations work.
+//
+// - This is where negative clarities come into play.  If an expectation exists and
+//   the raw perception is not present, throw a pseudo-raw-perception into the 
+//   elements with negative clarity.  
+// - Also, the second search models active interatction with the world.  So it would
+//   involve throwing a 'control' element into the elements and then requerying 
+//   the elements.
+
+
+// Object Generation: If all else fails with activating and modifying existing
+// objects, create new ones.  Criteria for this point is probably 'when pleasure is 
+// not sufficiently explained'
 
 return;
-
-// TODO: decide when and when not to run the below based on existing objects
-// Probably based on 'when pleasure is not sufficiently explained'
 
 // create an object from scratch
 let _obj =
