@@ -28,7 +28,7 @@ class mind extends Array {
     constructor() {
         super();
         this.clarityCount = 7; // How many objects can be held in perception
-        this.clarityThreshold = 0.33; // What level of clarity brings somethign into perception        
+        this.clarityThreshold = 0.33; // What level of clarity brings somethign into perception 
     }
 
     get pleasure() { return this.find(e => e.quality == 'pleasure'); }
@@ -94,11 +94,11 @@ class mind extends Array {
 let dava = new mind();
 dava.push(
 
-    { quality: 'pleasure', clarity: 0.75 }, // perception
-    { quality: 'a', clarity: 1 }, // perception
-    { quality: 'b', clarity: 0.5 }, // perception
-    { quality: 'c', clarity: 0.75 }, // perception
-    { quality: 'd', clarity: 0.25 }, // perception
+    { id: 'pleasure', clarity: 0.75 }, // perception
+    { id: 'a', clarity: 1 }, // perception
+    { id: 'b', clarity: 0.5 }, // perception
+    { id: 'c', clarity: 0.75 }, // perception
+    { id: 'd', clarity: 0.25 }, // perception
 
     // This should come about by the algorithm, but I'm seeding it here
     // to work with object matching before object creation
@@ -122,27 +122,14 @@ dava.push(
 
 console.log('davaObjects', dava.activateObjects().objects[0])
 
-// - I'm going to want some sort of 'labor' to extract elements.  
-//   However, labor won't just be a number.  It will need to 
-//   include some sort of function accepting a type of object and
-//   returning another type.
-// - Window indicates visibility of elements.  Like, labor though,
-//   maybe some function instead, but here not one that extracts
-//   elements, just one that displays them.
-let world = {
-    room: 'world',
-    children: [
-        dava,
-        { 
-            room: 'lit', 
-            children: [ { a: 2 }, { b: 3 } ] 
-        },
-        {
-            room: 'dark', 
-            children: [ { c: 1 }, { d: 2 } ] 
-        }, 
-    ]
-};
-    
+// For the world, I can see myself getting back into old problems.
+// These will take a while to resolve.  I am going to make the 
+// world less important here and just hard-code some anticipated
+// moves from the mind.  
+// TODO: loosely couple world and mind.  Create API structure 
+// for world and mind and have it so that their interactions
+// are flexible but the rules for building them are well defined.
+
+let world = {};
 
 
