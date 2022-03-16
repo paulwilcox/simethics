@@ -118,17 +118,24 @@ dava.push(
 );
 
 
-console.log(dava.activateObjects().objects[0])
+console.log('davaObjects', dava.activateObjects().objects[0])
 
-return;
-
-let world = [
-
-    { room: 'lit', clarity: 0.75, children: [ { a: 2 }, { b: 3 } ] },
-    { room: 'dark', clarity: 0.25, children: [ { c: 1 }, { d: 2 } ] }, 
-    { room: 'lounge', clarity: 1, children: [ {  } ] }
-
-];
+// - I'm going to want some sort of 'labor' to extract elements.  
+//   However, labor won't just be a number.  It will need to 
+//   include some sort of function accepting a type of object and
+//   returning another type.
+// - Window indicates visibility of elements.  Like, labor though,
+//   maybe some function instead, but here not one that extracts
+//   elements, just one that displays them.
+let world = {
+    room: world,
+    window: 1,
+    children: [
+        dava,
+        { room: 'lit', window: 0.75, children: [ { a: 2 }, { b: 3 } ] },
+        { room: 'dark', window: 0.25, children: [ { c: 1 }, { d: 2 } ] }, 
+    ]
+};
     
 
 
