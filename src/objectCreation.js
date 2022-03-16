@@ -3,6 +3,8 @@
     Quality:   The identifier, distinguishes it from other objects in perception.
     Quantity:  The amount an object has of itself.  Not really used yet.  Just there to
                point out that it is different than clarity.
+               Note: Getting rid of this.  It is in the way.  And it will need to be
+               either explicitly primitive or derived as with other concepts.
     Clarity:   The degree to which an object is in perception.  I haven't decided whether
                I seek a -1 to 1 scale or a 0 to 1 scale.
     A Raw Perception: 
@@ -92,11 +94,11 @@ class mind extends Array {
 let dava = new mind();
 dava.push(
 
-    { quality: 'pleasure', quantity: 2, clarity: 0.75 }, // perception
-    { quality: 'a', quantity: 2, clarity: 1 }, // perception
-    { quality: 'b', quantity: 3, clarity: 0.5 }, // perception
-    { quality: 'c', quantity: 1, clarity: 0.75 }, // perception
-    { quality: 'd', quantity: 2, clarity: 0.25 }, // perception
+    { quality: 'pleasure', clarity: 0.75 }, // perception
+    { quality: 'a', clarity: 1 }, // perception
+    { quality: 'b', clarity: 0.5 }, // perception
+    { quality: 'c', clarity: 0.75 }, // perception
+    { quality: 'd', clarity: 0.25 }, // perception
 
     // This should come about by the algorithm, but I'm seeding it here
     // to work with object matching before object creation
@@ -108,9 +110,9 @@ dava.push(
         
         children: [
             // These clarities indicate how important their existence is in the parent object
-            { quality: 'pleasure', quantity: 2, clarity: 0.75 }, 
-            { quality: 'a', quantity: 2, clarity: 0.75 },
-            { quality: 'c', quantity: 1, clarity: 0.75 }
+            { quality: 'pleasure', clarity: 0.75 }, 
+            { quality: 'a', clarity: 0.75 },
+            { quality: 'c', clarity: 0.75 }
         ]
 
     } 
@@ -128,12 +130,17 @@ console.log('davaObjects', dava.activateObjects().objects[0])
 //   maybe some function instead, but here not one that extracts
 //   elements, just one that displays them.
 let world = {
-    room: world,
-    window: 1,
+    room: 'world',
     children: [
         dava,
-        { room: 'lit', window: 0.75, children: [ { a: 2 }, { b: 3 } ] },
-        { room: 'dark', window: 0.25, children: [ { c: 1 }, { d: 2 } ] }, 
+        { 
+            room: 'lit', 
+            children: [ { a: 2 }, { b: 3 } ] 
+        },
+        {
+            room: 'dark', 
+            children: [ { c: 1 }, { d: 2 } ] 
+        }, 
     ]
 };
     
