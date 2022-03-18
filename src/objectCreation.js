@@ -36,11 +36,23 @@ class room {
 
     push(...children) {
         for (let child of children) { 
-            child.parent = this;
-            if (typeof child === 'function') 
+
+            if (typeof child === 'function') {
                 this.funcs.push(child);
-            else 
-                this.children.push(child);
+                continue;
+            }
+
+            // I want a getter because a true property is polluting console.log.
+            // If I build a log() method then turn into a real property again.
+            // stackoverflow.com/q/37973290
+            Object.defineProperty( 
+                child, 
+                'parent', 
+                { get: function() { return this; }.bind(this) }
+            );
+
+            this.children.push(child);
+            
         }
         return this;
     }
@@ -56,6 +68,9 @@ class mind extends room {
         this.clarityCount = 7; // How many objects can be held in perception
         this.clarityThreshold = 0.33; // What level of clarity brings somethign into perception 
     
+        // Not used yet.
+        // This will have to happen organically.  
+        // Right now, I'm hard coding the runs referencing the methods directly.
         this.push(
             () => this.lookAround(),
             () => this.activateObjects()
@@ -68,6 +83,7 @@ class mind extends room {
     get rawPerceptions() { return this.children.filter(e => e.name && e.name.startsWith('raw.')); }
 
     lookAround() {
+
         for (let sibling of this.siblings) {
             let rawPerception = {
                 name: 'raw.' + sibling.name.replace('switch.', ''),
@@ -176,6 +192,15 @@ dava.push(
 
 */
 
+// TODO: Right now 'lookAround' interacts with siblings directly.  
+// But I can't model different visibilites based on different 
+// behaviors/controls with this.  For, instance, 'a', has value
+// '1', but I may want 'a' to be hard to see for 'dava', and so
+// translates to a clarity of '0.5'.  But if a different way
+// to look around is made, clarity is better.  I can create a
+// lookAround2(), but this puts the logic only inside, 'dava'.
+// I want the logic to also be inside 'a', and 'dava' has to 
+// learn which look around method works better.  
 let world = room.create('world').push(
     dava,
     { name: 'switch.pleasure', value: 0.75 }, 
@@ -185,6 +210,13 @@ let world = room.create('world').push(
     { name: 'd', value: 0.25 }
 );
 
-console.log(
-    dava.lookAround().activateObjects().children
-);
+let logThis =     
+    dava
+    .lookAround()
+    .activateObjects()
+    .children;
+
+console.log(JSON.parse(
+    JSON.stringify(logThis)
+    .replace(/"funcs":\[\],*/, '')
+));
