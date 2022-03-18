@@ -23,17 +23,39 @@
 */
 let fd = require('fluent-data');
 
-class mind extends Array {
+class room {
+    constructor(name) {
+        if (name)
+            this.name = name;
+        this.children = [];
+        this.funcs = [];
+    }
+    push(...children) {
+        for (let child of children) 
+            if (typeof child === 'function') 
+                this.funcs.push(child);
+            else 
+                this.children.push(child);
+        return this;
+    }
+}
+room.create = (name) => new room(name);
 
-    constructor() {
-        super();
+class mind extends room {
+
+    constructor(name) {
+
+        super(name);
         this.clarityCount = 7; // How many objects can be held in perception
         this.clarityThreshold = 0.33; // What level of clarity brings somethign into perception 
+    
+        this.push(() => this.activateObjects());
+
     }
 
-    get pleasure() { return this.find(e => e.quality == 'pleasure'); }
-    get objects() { return this.filter(e => Object.keys(e).includes('children')); }
-    get rawPerceptions() { return this.filter(e => !Object.keys(e).includes('children')); }
+    get pleasure() { return this.children.find(e => e.quality == 'pleasure'); }
+    get objects() { return this.children.filter(e => Object.keys(e).includes('children')); }
+    get rawPerceptions() { return this.children.filter(e => !Object.keys(e).includes('children')); }
 
     // Existing latent objects are put put into clarity.  (I may 
     // move the inner clarity algorithm to subsequent activation)
@@ -91,36 +113,32 @@ class mind extends Array {
 
 }
 
-let dava = new mind();
+let dava = new mind('dava');
 dava.push(
 
-    { id: 'pleasure', clarity: 0.75 }, // perception
-    { id: 'a', clarity: 1 }, // perception
-    { id: 'b', clarity: 0.5 }, // perception
-    { id: 'c', clarity: 0.75 }, // perception
-    { id: 'd', clarity: 0.25 }, // perception
+    { quality: 'pleasure', clarity: 0.75 }, // perception
+    { quality: 'a', clarity: 1 }, // perception
+    { quality: 'b', clarity: 0.5 }, // perception
+    { quality: 'c', clarity: 0.75 }, // perception
+    { quality: 'd', clarity: 0.25 }, // perception
 
     // This should come about by the algorithm, but I'm seeding it here
-    // to work with object matching before object creation
-    {
-        
-        // This clarity indicates level of perception, like the raw elements.
-        // It is to be processed on each refresh of raw perceptions
-        clarity: undefined, 
-        
-        children: [
-            // These clarities indicate how important their existence is in the parent object
-            { quality: 'pleasure', clarity: 0.75 }, 
-            { quality: 'a', clarity: 0.75 },
-            { quality: 'c', clarity: 0.75 }
-        ]
-
-    } 
+    // to work with object matching before object creation.
+    // This room has no parent 'clarity' right now, but it will have one.
+    room.create().push(
+        // These clarities indicate how important their existence is in the parent object
+        { quality: 'pleasure', clarity: 0.75 }, 
+        { quality: 'a', clarity: 0.75 },
+        { quality: 'c', clarity: 0.75 }
+    ) 
      
 );
 
 
-console.log('davaObjects', dava.activateObjects().objects[0])
+console.log('davaObjects', dava.funcs[0]())
+
+
+return;
 
 // For the world, I can see myself getting back into old problems.
 // These will take a while to resolve.  I am going to make the 
@@ -130,6 +148,26 @@ console.log('davaObjects', dava.activateObjects().objects[0])
 // for world and mind and have it so that their interactions
 // are flexible but the rules for building them are well defined.
 
-let world = {};
+/*
 
+    - Objects are in rooms inside the world (which is also a room)
+    - Objects can have state, which is just an array of other objects
+    - Objects have interfaces.  
+       > These are functions that accept other objects as parameters.
+       > To view object state:
+           - ObjectA is in same room as ObjectB
+           - ObjectA has a child element that matches on ObjectB 
+             interface input
+           - ObjectB reads it's state, and releases elements into
+             its room.   
+
+*/
+
+let world = room.create('world').push(
+    dava,
+    { a: 1 },
+    { b: 0.5 },
+    { c: 0.75 },
+    { d: 0.25 }
+);
 
