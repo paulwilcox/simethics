@@ -1,18 +1,16 @@
 /*
     
-    Quality:   The identifier, distinguishes it from other objects in perception.
-    Quantity:  The amount an object has of itself.  Not really used yet.  Just there to
-               point out that it is different than clarity.
-               Note: Getting rid of this.  It is in the way.  And it will need to be
-               either explicitly primitive or derived as with other concepts.
+    Name:      A loose identifier.  Loose because it distinguishes from other objects,
+               but may share a name with some others, meaning they are both of the same
+               type but otherwise hard to distinguish.
     Clarity:   The degree to which an object is in perception.  I haven't decided whether
                I seek a -1 to 1 scale or a 0 to 1 scale.
     A Raw Perception: 
         - Has no component elements.
-        - Has a well defined quality, quantity, and direct clarity.
+        - Has a well defined name, quantity, and direct clarity.
     An Object:
         - Has component elements
-        - Ill defined quality, as the quality is the component elements
+        - Ill defined name, as the name is the component elements
         - Not sure if I consider it to have top level quantity yet
         - Has clarity, defined by a cross between inner element clarities and raw perception 
           clarities.  
@@ -24,20 +22,29 @@
 let fd = require('fluent-data');
 
 class room {
+
     constructor(name) {
         if (name)
             this.name = name;
         this.children = [];
         this.funcs = [];
     }
+
+    get siblings() {
+        return this.parent.children.filter(c => c !== this);
+    }
+
     push(...children) {
-        for (let child of children) 
+        for (let child of children) { 
+            child.parent = this;
             if (typeof child === 'function') 
                 this.funcs.push(child);
             else 
                 this.children.push(child);
+        }
         return this;
     }
+
 }
 room.create = (name) => new room(name);
 
@@ -49,13 +56,27 @@ class mind extends room {
         this.clarityCount = 7; // How many objects can be held in perception
         this.clarityThreshold = 0.33; // What level of clarity brings somethign into perception 
     
-        this.push(() => this.activateObjects());
+        this.push(
+            () => this.lookAround(),
+            () => this.activateObjects()
+        );
 
     }
 
-    get pleasure() { return this.children.find(e => e.quality == 'pleasure'); }
-    get objects() { return this.children.filter(e => Object.keys(e).includes('children')); }
-    get rawPerceptions() { return this.children.filter(e => !Object.keys(e).includes('children')); }
+    get pleasure() { return this.children.find(e => e.name == 'pleasure'); }
+    get objects() { return this.children.filter(e => e.name && e.name.startsWith('obj.')); }
+    get rawPerceptions() { return this.children.filter(e => e.name && e.name.startsWith('raw.')); }
+
+    lookAround() {
+        for (let sibling of this.siblings) {
+            let rawPerception = {
+                name: 'raw.' + sibling.name.replace('switch.', ''),
+                clarity: sibling.value
+            }
+            this.push(rawPerception);
+        }
+        return this;
+    }
 
     // Existing latent objects are put put into clarity.  (I may 
     // move the inner clarity algorithm to subsequent activation)
@@ -75,7 +96,9 @@ class mind extends room {
             //    element's value, and update the average to reflect the new 5th data point.
             let claritySumOfProds = 0;
             for (let e of o.children) {
-                let rp = this.rawPerceptions.find(p => p.quality == e.quality);
+                let rp = this.rawPerceptions.find(p => p.name == e.name);
+                if (!rp)
+                    continue;
                 claritySumOfProds += e.clarity * (rp.clarity || 0); // for the parent clarity
                 e.clarity = (e.clarity * 4 + rp.clarity) / 5; // for the inner clarities
             }
@@ -115,30 +138,20 @@ class mind extends room {
 
 let dava = new mind('dava');
 dava.push(
-
-    { quality: 'pleasure', clarity: 0.75 }, // perception
-    { quality: 'a', clarity: 1 }, // perception
-    { quality: 'b', clarity: 0.5 }, // perception
-    { quality: 'c', clarity: 0.75 }, // perception
-    { quality: 'd', clarity: 0.25 }, // perception
-
     // This should come about by the algorithm, but I'm seeding it here
     // to work with object matching before object creation.
     // This room has no parent 'clarity' right now, but it will have one.
-    room.create().push(
+    room.create('obj.latent').push(
         // These clarities indicate how important their existence is in the parent object
-        { quality: 'pleasure', clarity: 0.75 }, 
-        { quality: 'a', clarity: 0.75 },
-        { quality: 'c', clarity: 0.75 }
+        { name: 'raw.pleasure', clarity: 0.75 }, 
+        { name: 'raw.a', clarity: 0.75 },
+        { name: 'raw.c', clarity: 0.75 }
     ) 
      
 );
 
+// console.log('davaObjects', dava.funcs[0]())
 
-console.log('davaObjects', dava.funcs[0]())
-
-
-return;
 
 // For the world, I can see myself getting back into old problems.
 // These will take a while to resolve.  I am going to make the 
@@ -165,9 +178,13 @@ return;
 
 let world = room.create('world').push(
     dava,
-    { a: 1 },
-    { b: 0.5 },
-    { c: 0.75 },
-    { d: 0.25 }
+    { name: 'switch.pleasure', value: 0.75 }, 
+    { name: 'a', value: 1},
+    { name: 'b', value: 0.5 },
+    { name: 'c', value: 0.75}, 
+    { name: 'd', value: 0.25 }
 );
 
+console.log(
+    dava.lookAround().activateObjects().children
+);
