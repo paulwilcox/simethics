@@ -27,7 +27,8 @@ class room {
         if (name)
             this.name = name;
         this.children = [];
-        this.funcs = [];
+        this.communicants = []; 
+        this.receptors = []; // communicant recievers
     }
 
     get siblings() {
@@ -60,38 +61,49 @@ class room {
 }
 room.create = (name) => new room(name);
 
+/*
+    Going down an old rabbit-hole, but maybe making progress.
+    Rooms need to interact with one another and change each other's state.
+    But, I'm having trouble with loose coupling and separation of concerns here.
+    Going in circles in my thinking. 
+*/
+class communicant {
+    constructor(funcNames, sender, state) {
+        this.funcNames = funcNames; // functions activating the communicant
+        this.state = state;
+        this.sender = sender;
+        this.reciever = null;
+        this.active = true;
+    }
+    searchForRecievers(room) {
+
+        let reciever = room.children.find(child => child.funcNames )
+
+        if (reciever === this.sender || !reciever[this.name])
+            return;
+        let _state = reciever[this.name](this);
+        if (_state === null || _state === undefined)
+            return;
+        this.reciever = reciever;
+        this.state = state;
+    }
+}
+
 class mind extends room {
 
     constructor(name) {
-
         super(name);
         this.clarityCount = 7; // How many objects can be held in perception
         this.clarityThreshold = 0.33; // What level of clarity brings somethign into perception 
-    
-        // Not used yet.
-        // This will have to happen organically.  
-        // Right now, I'm hard coding the runs referencing the methods directly.
-        this.push(
-            () => this.lookAround(),
-            () => this.activateObjects()
-        );
-
     }
 
     get pleasure() { return this.children.find(e => e.name == 'pleasure'); }
     get objects() { return this.children.filter(e => e.name && e.name.startsWith('obj.')); }
     get rawPerceptions() { return this.children.filter(e => e.name && e.name.startsWith('raw.')); }
 
-    lookAround() {
-
-        for (let sibling of this.siblings) {
-            let rawPerception = {
-                name: 'raw.' + sibling.name.replace('switch.', ''),
-                clarity: sibling.value
-            }
-            this.push(rawPerception);
-        }
-        return this;
+    addPerceptions(...perceptions) {
+        this.push(...perceptions);
+        this.activateObjects();
     }
 
     // Existing latent objects are put put into clarity.  (I may 
@@ -149,6 +161,22 @@ class mind extends room {
         .filter((e,i) => i < clarityCount)
         .log();
     */
+
+}
+mind.funcs.lookAround = (communicant) => {
+
+    let rawPerceptions = [];
+        
+    for (let child of communicant.state) {
+        if (child === source)
+            continue;
+        rawPerceptions.push({
+            name: 'raw.' + sibling.name.replace('switch.', ''),
+            clarity: sibling.value
+        });
+    }
+
+    source.addPerceptions(...rawPerceptions);
 
 }
 
@@ -220,3 +248,5 @@ console.log(JSON.parse(
     JSON.stringify(logThis)
     .replace(/"funcs":\[\],*/, '')
 ));
+
+
