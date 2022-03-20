@@ -21,39 +21,73 @@
 */
 let fd = require('fluent-data');
 
-class room {
+class room extends Array {
+
+    static base = null;
+    static loops = 0;
+    static maxLoops = null;
 
     constructor(name) {
+
+        super();
+
+        if (room.base === null)
+            room.base = this;
+
         if (name)
             this.name = name;
-        this.children = [];
-        this.communicants = []; 
-        this.receptors = []; // communicant recievers
-    }
 
-    get siblings() {
-        return this.parent.children.filter(c => c !== this);
+        this.recievers = [];
+
     }
 
     push(...children) {
         for (let child of children) { 
 
             if (typeof child === 'function') {
-                this.funcs.push(child);
+                this.recievers.push(child.bind(this));
                 continue;
             }
 
-            // I want a getter because a true property is polluting console.log.
-            // If I build a log() method then turn into a real property again.
-            // stackoverflow.com/q/37973290
-            Object.defineProperty( 
-                child, 
-                'parent', 
-                { get: function() { return this; }.bind(this) }
-            );
-
-            this.children.push(child);
+            room.setParent(child, this);
+            super.push(child);
             
+        }
+        return this;
+    }
+
+    // A true property is polluting console.log 
+    // (stackoverflow.com/q/37973290)
+    static setParent(obj, value) {
+        Object.defineProperty( 
+            obj, 
+            'parent', 
+            { 
+                get: function() { return value; }.bind(value),
+                configurable: true
+            }
+        );
+    }
+
+    recieve () {
+        for(let reciever of this.recievers)
+        for(let child of this) { 
+            if(child.recieve)
+                child.recieve();
+            reciever(child);
+        }
+        return this;
+    }
+
+    garbageCollect () {
+        for(let c = this.length - 1; c >= 0; c--) {
+            let child = this[c];
+            if (child.garbageCollect)
+                child.garbageCollect();
+            if (child.garbage) {
+                this.splice(c,1);
+                room.setParent(child, null);
+            }
         }
         return this;
     }
@@ -61,45 +95,57 @@ class room {
 }
 room.create = (name) => new room(name);
 
-/*
-    Going down an old rabbit-hole, but maybe making progress.
-    Rooms need to interact with one another and change each other's state.
-    But, I'm having trouble with loose coupling and separation of concerns here.
-    Going in circles in my thinking. 
-*/
-class communicant {
-    constructor(funcNames, sender, state) {
-        this.funcNames = funcNames; // functions activating the communicant
-        this.state = state;
-        this.sender = sender;
-        this.reciever = null;
-        this.active = true;
-    }
-    searchForRecievers(room) {
-
-        let reciever = room.children.find(child => child.funcNames )
-
-        if (reciever === this.sender || !reciever[this.name])
-            return;
-        let _state = reciever[this.name](this);
-        if (_state === null || _state === undefined)
-            return;
-        this.reciever = reciever;
-        this.state = state;
-    }
-}
-
 class mind extends room {
 
     constructor(name) {
+
         super(name);
         this.clarityCount = 7; // How many objects can be held in perception
         this.clarityThreshold = 0.33; // What level of clarity brings somethign into perception 
+
+        this.push(
+            (communicant) => this.requestParentContents(communicant),
+            (communicant) => this.readRoomContents(communicant)
+        );
+
     }
 
-    get pleasure() { return this.children.find(e => e.name == 'pleasure'); }
-    get objects() { return this.children.filter(e => e.name && e.name.startsWith('obj.')); }
-    get rawPerceptions() { return this.children.filter(e => e.name && e.name.startsWith('raw.')); }
+    get pleasure() { return this.find(e => e.name == 'pleasure'); }
+    get objects() { return this.filter(e => e.name && e.name.startsWith('obj.')); }
+    get rawPerceptions() { return this.filter(e => e.name && e.name.startsWith('raw.')); }
+
+    requestParentContents(communicant) {
+        if (communicant.name !== 'request parent contents')
+            return;
+        this.parent.push({
+            name: 'content request',
+            sender: this,
+            intensity: 0.5
+        });
+        communicant.garbage = true;
+    }
+
+    readRoomContents(communicant) {
+
+        if (communicant.name !== 'content response')
+            return;
+
+        let rawPerceptions = [];
+            
+        for (let item of communicant.items) {
+            if (item === source)
+                continue;
+            rawPerceptions.push({
+                name: 'raw.' + sibling.name.replace('switch.', ''),
+                clarity: sibling.value
+            });
+        }
+    
+        communicant.garbage = true;
+
+        source.addPerceptions(...rawPerceptions);
+
+    }
 
     addPerceptions(...perceptions) {
         this.push(...perceptions);
@@ -163,25 +209,13 @@ class mind extends room {
     */
 
 }
-mind.funcs.lookAround = (communicant) => {
-
-    let rawPerceptions = [];
-        
-    for (let child of communicant.state) {
-        if (child === source)
-            continue;
-        rawPerceptions.push({
-            name: 'raw.' + sibling.name.replace('switch.', ''),
-            clarity: sibling.value
-        });
-    }
-
-    source.addPerceptions(...rawPerceptions);
-
-}
 
 let dava = new mind('dava');
 dava.push(
+
+    // the starter communicant
+    { name: 'request parent contents' }, 
+
     // This should come about by the algorithm, but I'm seeding it here
     // to work with object matching before object creation.
     // This room has no parent 'clarity' right now, but it will have one.
@@ -194,59 +228,41 @@ dava.push(
      
 );
 
-// console.log('davaObjects', dava.funcs[0]())
-
-
-// For the world, I can see myself getting back into old problems.
-// These will take a while to resolve.  I am going to make the 
-// world less important here and just hard-code some anticipated
-// moves from the mind.  
-// TODO: loosely couple world and mind.  Create API structure 
-// for world and mind and have it so that their interactions
-// are flexible but the rules for building them are well defined.
-
-/*
-
-    - Objects are in rooms inside the world (which is also a room)
-    - Objects can have state, which is just an array of other objects
-    - Objects have interfaces.  
-       > These are functions that accept other objects as parameters.
-       > To view object state:
-           - ObjectA is in same room as ObjectB
-           - ObjectA has a child element that matches on ObjectB 
-             interface input
-           - ObjectB reads it's state, and releases elements into
-             its room.   
-
-*/
-
-// TODO: Right now 'lookAround' interacts with siblings directly.  
-// But I can't model different visibilites based on different 
-// behaviors/controls with this.  For, instance, 'a', has value
-// '1', but I may want 'a' to be hard to see for 'dava', and so
-// translates to a clarity of '0.5'.  But if a different way
-// to look around is made, clarity is better.  I can create a
-// lookAround2(), but this puts the logic only inside, 'dava'.
-// I want the logic to also be inside 'a', and 'dava' has to 
-// learn which look around method works better.  
 let world = room.create('world').push(
+
     dava,
     { name: 'switch.pleasure', value: 0.75 }, 
     { name: 'a', value: 1},
     { name: 'b', value: 0.5 },
     { name: 'c', value: 0.75}, 
-    { name: 'd', value: 0.25 }
+    { name: 'd', value: 0.25 },
+
+    function showContents (communicant) {
+
+        if (communicant.name !== 'content request')
+            return;
+
+        let items = 
+            this
+            .filter(e => e !== communicant.sender)
+            .map(e => {
+                let clone = JSON.parse(JSON.stringify(e));
+                if (clone.value)
+                    clone.value *= communicant.intensity;
+            });
+
+        communicant.sender.push({
+            name: 'content response',
+            items
+        });
+
+        communicant.garbage = true;
+
+    }
+
 );
 
-let logThis =     
-    dava
-    .lookAround()
-    .activateObjects()
-    .children;
+world.recieve().garbageCollect();
 
-console.log(JSON.parse(
-    JSON.stringify(logThis)
-    .replace(/"funcs":\[\],*/, '')
-));
-
+console.log('dava', dava);
 
