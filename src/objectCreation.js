@@ -133,17 +133,18 @@ class mind extends room {
         let rawPerceptions = [];
             
         for (let item of communicant.items) {
-            if (item === source)
+
+            if (item === this)
                 continue;
             rawPerceptions.push({
-                name: 'raw.' + sibling.name.replace('switch.', ''),
-                clarity: sibling.value
+                name: 'raw.' + item.name.replace('switch.', ''),
+                clarity: item.value
             });
         }
     
         communicant.garbage = true;
 
-        source.addPerceptions(...rawPerceptions);
+        this.addPerceptions(...rawPerceptions);
 
     }
 
@@ -169,14 +170,15 @@ class mind extends room {
             //    pretend as though I have 4 points in history that led to the child
             //    element's value, and update the average to reflect the new 5th data point.
             let claritySumOfProds = 0;
-            for (let e of o.children) {
+
+            for (let e of o) {
                 let rp = this.rawPerceptions.find(p => p.name == e.name);
                 if (!rp)
                     continue;
                 claritySumOfProds += e.clarity * (rp.clarity || 0); // for the parent clarity
                 e.clarity = (e.clarity * 4 + rp.clarity) / 5; // for the inner clarities
             }
-            o.clarity = claritySumOfProds / o.children.length;
+            o.clarity = claritySumOfProds / o.length;
 
         }
 
@@ -244,7 +246,12 @@ let world = room.create('world').push(
 
         let items = 
             this
-            .filter(e => e !== communicant.sender)
+            .filter(e => 
+                // don't return the communicant itself or what sent 
+                // the communicant, both of which would be in the world. 
+                e !== communicant.sender && 
+                e !== communicant
+            )
             .map(e => {
                 let clone = JSON.parse(JSON.stringify(e));
                 if (clone.value)
@@ -257,13 +264,15 @@ let world = room.create('world').push(
             items
         });
 
-        communicant.garbage = true;
+        communicant.garbage = true; 
 
     }
 
 );
 
-world.recieve().garbageCollect();
+world
+    .recieve().garbageCollect()
+    .recieve().garbageCollect();
 
 console.log('dava', dava);
 
