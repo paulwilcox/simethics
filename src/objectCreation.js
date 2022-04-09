@@ -249,6 +249,7 @@ let world = room.create('world').push(
                 let clone = JSON.parse(JSON.stringify(e));
                 if (clone.value)
                     clone.value *= communicant.intensity;
+                return clone;
             });
 
         communicant.sender.push({
