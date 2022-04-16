@@ -14,9 +14,13 @@ class room extends Array {
         if (name)
             this.name = name;
 
-        // this.communicants = []; // communicating objects
+        this.communicants = []; // communicating objects
         this.recievers = []; // functions acting on communication objects
 
+    }
+
+    static create (name) { 
+        return new room(name); 
     }
 
     push(...children) {
@@ -27,24 +31,11 @@ class room extends Array {
                 continue;
             }
 
-            room.setParent(child, this);
+            setParent(child, this);
             super.push(child);
             
         }
         return this;
-    }
-
-    // A true property is polluting console.log 
-    // (stackoverflow.com/q/37973290)
-    static setParent(obj, value) {
-        Object.defineProperty( 
-            obj, 
-            'parent', 
-            { 
-                get: function() { return value; }.bind(value),
-                configurable: true
-            }
-        );
     }
 
     recieve () {
@@ -65,7 +56,7 @@ class room extends Array {
             // garbage collect
             if (child.garbage) {
                 this.splice(c,1);
-                room.setParent(child, null);
+                setParent(child, null);
             }
 
         }
@@ -76,6 +67,17 @@ class room extends Array {
 
 }
 
-room.create = (name) => new room(name);
+// A true property is polluting console.log 
+// (stackoverflow.com/q/37973290)
+function setParent(obj, value) {
+    Object.defineProperty( 
+        obj, 
+        'parent', 
+        { 
+            get: function() { return value; }.bind(value),
+            configurable: true
+        }
+    );
+}
 
 module.exports = room;
