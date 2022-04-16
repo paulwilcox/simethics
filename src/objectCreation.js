@@ -35,7 +35,7 @@ let dava =
             { name: 'raw.c', clarity: 0.75 }
         )     
     )
-    .pushCommunicant({ name: 'request parent contents' }); // the starter communicant
+    .pushCommunicant('request parent contents', {}); // the starter communicant
 
 let world = 
     room.create('world')
@@ -48,10 +48,8 @@ let world =
         { name: 'd', value: 0.25 },
     )
     .pushReciever(
+        'content request',
         function (communicant) {
-
-            if (communicant.name !== 'content request')
-                return;
 
             let items = 
                 this
@@ -68,11 +66,7 @@ let world =
                     return clone;
                 });
 
-            communicant.sender.pushCommunicant({
-                name: 'content response',
-                items
-            });
-
+            communicant.sender.pushCommunicant('content response', { items });
             communicant.garbage = true; 
 
         }

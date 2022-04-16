@@ -9,7 +9,12 @@ class mind extends room {
         this.clarityThreshold = 0.33; // What level of clarity brings somethign into perception 
 
         this.pushReciever(
-            (communicant) => this.requestParentContents(communicant),
+            'request parent contents', 
+            (communicant) => this.requestParentContents(communicant)
+        );
+        
+        this.pushReciever(
+            'content response',
             (communicant) => this.readRoomContents(communicant)
         );
 
@@ -20,32 +25,22 @@ class mind extends room {
     get rawPerceptions() { return this.filter(e => e.name && e.name.startsWith('raw.')); }
 
     requestParentContents(communicant) {
-        if (communicant.name !== 'request parent contents')
-            return;
-        this.parent.pushCommunicant({
-            name: 'content request',
-            sender: this,
-            intensity: 0.5
-        });
+        this.parent.pushCommunicant(
+            'content request',
+            { sender: this, intensity: 0.5 }
+        );
         communicant.garbage = true;
     }
 
     readRoomContents(communicant) {
 
-        if (communicant.name !== 'content response')
-            return;
-
         let rawPerceptions = [];
             
-        for (let item of communicant.items) {
-
-            if (item === this)
-                continue;
+        for (let item of communicant.items) 
             rawPerceptions.push({
                 name: 'raw.' + item.name.replace('switch.', ''),
                 clarity: item.value
             });
-        }
     
         communicant.garbage = true;
 

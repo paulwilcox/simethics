@@ -14,8 +14,7 @@ class room extends Array {
         if (name)
             this.name = name;
 
-        this.communicants = []; // communicating objects
-        this.recievers = []; // functions acting on communication objects
+        this.communicatons = {}; // { key: { communicants: [], recievers: [] } }
 
     }
 
@@ -33,31 +32,39 @@ class room extends Array {
         return this;
     }
 
-    pushReciever(...recievers) {
-        for (let reciever of recievers) { 
-            if (typeof reciever !== 'function')
-                throw 'reciever must be a function';
-            this.recievers.push(reciever.bind(this));            
-        }
+    pushReciever(name, action) {
+        if (typeof action !== 'function')
+            throw 'reciever action must be a function';
+        this._addCommunicationKey(name);
+        this.communicatons[name].recievers.push(action.bind(this)); 
         return this;
     }
 
-    pushCommunicant(...communicants) {
-        for (let communicant of communicants) { 
-            if (typeof communicant === 'function')
-                throw 'communicant should not be a function';
-            this.communicants.push(communicant);            
-        }
+    pushCommunicant(name, communicant) {
+        if (typeof communicant === 'function')
+            throw 'communicant should not be a function';
+        this._addCommunicationKey(name);
+        this.communicatons[name].communicants.push(communicant);            
         return this;
+    }
+
+    _addCommunicationKey(key) {
+        if (!this.communicatons[key])
+            this.communicatons[key] = { 
+                recievers: [],
+                communicants: []
+            };
     }
 
     recieve () {
         
-        for(let reciever of this.recievers)
-        for(let communicant of this.communicants) {
+        for (let communication of Object.values(this.communicatons))
+        for (let reciever of communication.recievers)
+        for (let communicant of communication.communicants) {
             reciever(communicant);
         }
 
+        // loop object children backwards
         for(let c = this.length - 1; c >= 0; c--) {
 
             let child = this[c];
