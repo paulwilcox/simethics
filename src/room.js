@@ -14,7 +14,8 @@ class room extends Array {
         if (name)
             this.name = name;
 
-        this.recievers = [];
+        // this.communicants = []; // communicating objects
+        this.recievers = []; // functions acting on communication objects
 
     }
 
@@ -47,27 +48,30 @@ class room extends Array {
     }
 
     recieve () {
+        
+        // loop each reciever and each child object
         for(let reciever of this.recievers)
-        for(let child of this) { 
-            if(child.recieve)
-                child.recieve();
-            reciever(child);
-        }
-        this.garbageCollect();
-        return this;
-    }
-
-    garbageCollect () {
         for(let c = this.length - 1; c >= 0; c--) {
+
             let child = this[c];
-            if (child.garbageCollect)
-                child.garbageCollect();
+            
+            // process the child's recievers
+            if(child.recieve)
+                child.recieve();            
+
+            // process the current object's recievers
+            reciever(child);
+
+            // garbage collect
             if (child.garbage) {
                 this.splice(c,1);
                 room.setParent(child, null);
             }
+
         }
+
         return this;
+
     }
 
 }
