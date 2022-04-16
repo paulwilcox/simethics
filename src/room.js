@@ -23,17 +23,21 @@ class room extends Array {
         return new room(name); 
     }
 
-    push(...children) {
-        for (let child of children) { 
+    push(...items) {
+        for (let item of items) { 
+            if (typeof item === 'function')
+                throw 'item should not be a function'; // this may change if use case arises
+            setParent(item, this);
+            super.push(item);            
+        }
+        return this;
+    }
 
-            if (typeof child === 'function') {
-                this.recievers.push(child.bind(this));
-                continue;
-            }
-
-            setParent(child, this);
-            super.push(child);
-            
+    pushRecievers(...recievers) {
+        for (let reciever of recievers) { 
+            if (typeof reciever !== 'function')
+                throw 'reciever must be a function';
+            this.recievers.push(reciever.bind(this));            
         }
         return this;
     }

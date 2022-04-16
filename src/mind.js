@@ -8,7 +8,7 @@ class mind extends room {
         this.clarityCount = 7; // How many objects can be held in perception
         this.clarityThreshold = 0.33; // What level of clarity brings somethign into perception 
 
-        this.push(
+        this.pushRecievers(
             (communicant) => this.requestParentContents(communicant),
             (communicant) => this.readRoomContents(communicant)
         );
