@@ -33,7 +33,7 @@ class room extends Array {
         return this;
     }
 
-    pushRecievers(...recievers) {
+    pushReciever(...recievers) {
         for (let reciever of recievers) { 
             if (typeof reciever !== 'function')
                 throw 'reciever must be a function';
@@ -42,10 +42,22 @@ class room extends Array {
         return this;
     }
 
+    pushCommunicant(...communicants) {
+        for (let communicant of communicants) { 
+            if (typeof communicant === 'function')
+                throw 'communicant should not be a function';
+            this.communicants.push(communicant);            
+        }
+        return this;
+    }
+
     recieve () {
         
-        // loop each reciever and each child object
         for(let reciever of this.recievers)
+        for(let communicant of this.communicants) {
+            reciever(communicant);
+        }
+
         for(let c = this.length - 1; c >= 0; c--) {
 
             let child = this[c];
@@ -53,9 +65,6 @@ class room extends Array {
             // process the child's recievers
             if(child.recieve)
                 child.recieve();            
-
-            // process the current object's recievers
-            reciever(child);
 
             // garbage collect
             if (child.garbage) {

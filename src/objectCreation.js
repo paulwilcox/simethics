@@ -22,22 +22,20 @@
 let room = require('./room.js');
 let mind = require('./mind.js');
 
-let dava = new mind('dava').push(
-
-    // the starter communicant
-    { name: 'request parent contents' }, 
-
-    // This should come about by the algorithm, but I'm seeding it here
-    // to work with object matching before object creation.
-    // This room has no parent 'clarity' right now, but it will have one.
-    room.create('obj.latent').push(
-        // These clarities indicate how important their existence is in the parent object
-        { name: 'raw.pleasure', clarity: 0.75 }, 
-        { name: 'raw.a', clarity: 0.75 },
-        { name: 'raw.c', clarity: 0.75 }
-    ) 
-    
-);
+let dava = 
+    new mind('dava')
+    .push(
+        // This should come about by the algorithm, but I'm seeding it here
+        // to work with object matching before object creation.
+        // This room has no parent 'clarity' right now, but it will have one.
+        room.create('obj.latent').push(
+            // These clarities indicate how important their existence is in the parent object
+            { name: 'raw.pleasure', clarity: 0.75 }, 
+            { name: 'raw.a', clarity: 0.75 },
+            { name: 'raw.c', clarity: 0.75 }
+        )     
+    )
+    .pushCommunicant({ name: 'request parent contents' }); // the starter communicant
 
 let world = 
     room.create('world')
@@ -49,7 +47,7 @@ let world =
         { name: 'c', value: 0.75}, 
         { name: 'd', value: 0.25 },
     )
-    .pushRecievers(
+    .pushReciever(
         function (communicant) {
 
             if (communicant.name !== 'content request')
@@ -70,7 +68,7 @@ let world =
                     return clone;
                 });
 
-            communicant.sender.push({
+            communicant.sender.pushCommunicant({
                 name: 'content response',
                 items
             });
