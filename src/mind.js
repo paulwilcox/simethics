@@ -8,14 +8,31 @@ class mind extends room {
         this.clarityCount = 7; // How many objects can be held in perception
         this.clarityThreshold = 0.33; // What level of clarity brings somethign into perception 
 
-        this.pushReciever(
-            'request parent contents', 
-            (communicant) => this.requestParentContents(communicant)
+        this.pushReciever ('request parent contents',
+
+            function (communicant) {
+                this.parent.pushCommunicant(
+                    'content request',
+                    { sender: this, intensity: 0.5 }
+                );
+                communicant.garbage = true;
+            }        
+
         );
         
-        this.pushReciever(
-            'content response',
-            (communicant) => this.readRoomContents(communicant)
+        this.pushReciever ('content response',
+
+            function (communicant) {
+                let rawPerceptions = [];
+                for (let item of communicant.items) 
+                    rawPerceptions.push({
+                        name: 'raw.' + item.name.replace('switch.', ''),
+                        clarity: item.value
+                    });
+                communicant.garbage = true;
+                this.addPerceptions(...rawPerceptions);
+            }
+
         );
 
     }
@@ -23,30 +40,6 @@ class mind extends room {
     get pleasure() { return this.find(e => e.name == 'pleasure'); }
     get objects() { return this.filter(e => e.name && e.name.startsWith('obj.')); }
     get rawPerceptions() { return this.filter(e => e.name && e.name.startsWith('raw.')); }
-
-    requestParentContents(communicant) {
-        this.parent.pushCommunicant(
-            'content request',
-            { sender: this, intensity: 0.5 }
-        );
-        communicant.garbage = true;
-    }
-
-    readRoomContents(communicant) {
-
-        let rawPerceptions = [];
-            
-        for (let item of communicant.items) 
-            rawPerceptions.push({
-                name: 'raw.' + item.name.replace('switch.', ''),
-                clarity: item.value
-            });
-    
-        communicant.garbage = true;
-
-        this.addPerceptions(...rawPerceptions);
-
-    }
 
     addPerceptions(...perceptions) {
         this.push(...perceptions);
