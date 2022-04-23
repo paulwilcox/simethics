@@ -7,6 +7,7 @@ class mind extends room {
         super(name);
         this.clarityCount = 7; // How many objects can be held in perception
         this.clarityThreshold = 0.33; // What level of clarity brings somethign into perception 
+        this.supriseThreshold = 0.33; // What level of counter-expectation causes a deeper search
 
         this.pushReciever ('request parent contents',
 
@@ -20,6 +21,18 @@ class mind extends room {
 
         );
         
+        this.pushReciever ('request parent contents deeply',
+
+            function (communicant) {
+                this.parent.pushCommunicant(
+                    'content request',
+                    { sender: this, intensity: 1 }
+                );
+                communicant.garbage = true;
+            }        
+
+        );
+
         this.pushReciever ('content response',
 
             function (communicant) {
@@ -30,7 +43,8 @@ class mind extends room {
                         clarity: item.value
                     });
                 communicant.garbage = true;
-                this.addPerceptions(...rawPerceptions);
+                this.push(...rawPerceptions);
+                this.processObjects();                
             }
 
         );
@@ -41,56 +55,66 @@ class mind extends room {
     get objects() { return this.filter(e => e.name && e.name.startsWith('obj.')); }
     get rawPerceptions() { return this.filter(e => e.name && e.name.startsWith('raw.')); }
 
-    addPerceptions(...perceptions) {
-        this.push(...perceptions);
-        this.activateObjects();
-    }
-
     // Existing latent objects are put put into clarity.  (I may 
     // move the inner clarity algorithm to subsequent activation)
-    activateObjects() {
+    processObjects() {
+
+        let getRawPerceptionClarity = (elementName) => {
+            let perception = this.rawPerceptions.find(rp => rp.name == elementName);
+            if (!perception) return 0;
+            if (!perception.clarity) return 0;
+            return perception.clarity;
+        }
 
         for (let o of this.objects) {
 
-            // The parent object's clarity is being updated
-            //  - This clarity represents how much the object is actually being percieved
-            //  - Child element clarities are multiplied by matched perceptive clarity
-            //    and the average of this is taken.
-            // Each child element's clarity is being updated
-            //  - This clarity represents how crucial the element is in representing the
-            //    parent object.
-            //  - Since I don't want to record an actual history, instead what I do is 
-            //    pretend as though I have 4 points in history that led to the child
-            //    element's value, and update the average to reflect the new 5th data point.
-            let claritySumOfProds = 0;
-
-            for (let e of o) {
-                let rp = this.rawPerceptions.find(p => p.name == e.name);
-                if (!rp)
-                    continue;
-                claritySumOfProds += e.clarity * (rp.clarity || 0); // for the parent clarity
-                e.clarity = (e.clarity * 4 + rp.clarity) / 5; // for the inner clarities
+            // Set the parent object clarity based on object match to raw perceptions
+            if (o.stage == 'dormant') {
+                let avgSumOfProds = 
+                    o.reduce((agg,element) => {
+                        let rpClarity = getRawPerceptionClarity(element.name);
+                        return agg += element.clarity * rpClarity; 
+                    })
+                    / o.length;
+                o.clarity = avgSumOfProds;
+                o.stage = 'activated';
             }
-            o.clarity = claritySumOfProds / o.length;
+
+            // How different is an object to raw perceptions?  If a lot, search the world again. 
+            else if (o.stage == 'activated') {
+                let maxSurprise = o.reduce((agg,element) => {
+                    let rpClarity = getRawPerceptionClarity(element.name);
+                    return agg += Math.abs(element.clarity - rpClarity); 
+                });
+                // TODO: problem here is that intensity (in communicant) triggers change 
+                // in clarity for all items in the world.  We need each individual item
+                // reacting to intensity differently.  This way, when intensty rises, 
+                // other raw perceptions remain constant, but some new ones manifest. 
+                if (maxSurprise > this.supriseThreshold)
+                    this.pushCommunicant('request parent contents deeply', {});
+                o.stage = 'reviewed';
+            }
+
+            // Still different after review?  Calibrate expectations for next time.
+            // TODO: Account for the expectation that something specifically not 
+            // be present (different than it not mattering whether it's present
+            // or not).  Maybe throw a pseudo-raw perception with negative clarity?
+            else if (o.stage == 'reviewed') { 
+                for (let element of o) {
+                    let rpClarity = getRawPerceptionClarity(element.name);
+                    // Alter the inner clarities.  Change is like modifying a 
+                    // pseudo-average over time (as though current represents 
+                    // one of 5 instances).
+                    e.clarity = (e.clarity * 4 + rpClarity) / 5; 
+                }
+                o.stage = 'calibrated';
+            }
 
         }
 
         return this;
 
     }
-
-    // Expectation Search: Of the activated objects, there will be a mismatch for some
-    // of the inner elements.  Do a second search of raw perceptions to see if any 
-    // are found.  If not found, throw a pseudo-raw-perception with negatie clarity
-    // into the elements.  Basically, this models how expectations work.
-    //
-    // - This is where negative clarities come into play.  If an expectation exists and
-    //   the raw perception is not present, throw a pseudo-raw-perception into the 
-    //   elements with negative clarity.  
-    // - Also, the second search models active interatction with the world.  So it would
-    //   involve throwing a 'control' element into the elements and then requerying 
-    //   the elements.
-
 
     // Object Generation: If all else fails with activating and modifying existing
     // objects, create new ones.  Criteria for this point is probably 'when pleasure is 
