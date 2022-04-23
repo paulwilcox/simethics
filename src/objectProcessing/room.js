@@ -14,6 +14,13 @@ class room extends Array {
         if (name)
             this.name = name;
 
+        // TODO: Getting the communicants and recievers outside the room 
+        // makes coding more managable.  However, can I represent object
+        // creation that includes these communicants and recievers in the
+        // object set?  When the mind wants to create an object, but 
+        // that object represents more of a process or action, or a state
+        // of openness, representing communicants (actions) and recievers
+        // (listening) is necessary.
         this.communicatons = {}; // { key: { communicants: [], recievers: [] } }
 
     }
