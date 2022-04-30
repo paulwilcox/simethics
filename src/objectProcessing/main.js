@@ -21,6 +21,7 @@
 */
 let room = require('./room.js');
 let mind = require('./mind.js');
+let world = require('./makeWorld.js')();
 
 let dava = 
     new mind('dava')
@@ -37,41 +38,14 @@ let dava =
     )
     .pushCommunicant('request parent contents', {}); // the starter communicant
 
-let world = 
-    room.create('world')
-    .push(
-        dava,
-        { name: 'switch.pleasure', value: 0.75 }, 
-        { name: 'a', value: 1},
-        { name: 'b', value: 0.5 },
-        { name: 'c', value: 0.75}, 
-        { name: 'd', value: 0.25 },
-    )
-    .pushReciever(
-        'content request',
-        function (communicant) {
-
-            let items = 
-                this
-                .filter(e => 
-                    // don't return the communicant itself or what sent 
-                    // the communicant, both of which would be in the world. 
-                    e !== communicant.sender && 
-                    e !== communicant
-                )
-                .map(e => {
-                    let clone = JSON.parse(JSON.stringify(e));
-                    if (clone.value)
-                        clone.value *= communicant.intensity;
-                    return clone;
-                });
-
-            communicant.sender.pushCommunicant('content response', { items });
-            communicant.garbage = true; 
-
-        }
-
-    );
+world.push(
+    dava,
+    { name: 'switch.pleasure', value: 0.75 }, 
+    { name: 'a', value: 1},
+    { name: 'b', value: 0.5 },
+    { name: 'c', value: 0.75}, 
+    { name: 'd', value: 0.25 },
+);
 
 // TODO: loop recieve until some sort of stop
 world
