@@ -14,7 +14,11 @@ class mind extends room {
             function (communicant) {
                 this.parent.pushCommunicant(
                     'content request',
-                    { sender: this, intensity: 0.5 }
+                    { 
+                        sender: this, 
+                        searchRegex: '*',
+                        searchIntensity: 0.5 
+                    }
                 );
                 communicant.garbage = true;
             }        

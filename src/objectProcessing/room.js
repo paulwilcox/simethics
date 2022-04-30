@@ -1,3 +1,6 @@
+let communicant = require('./communicant.js');
+let reciever = require('./reciever.js');
+
 class room extends Array {
 
     static base = null;
@@ -39,20 +42,43 @@ class room extends Array {
         return this;
     }
 
+// TODO: consider a communicator class instead of a seperate 
+// communicant and reciever class.  Communicator might have
+// communicant and reciever properties.
+
     pushReciever(name, action) {
-        if (typeof action !== 'function')
-            throw 'reciever action must be a function';
+
         this._addCommunicationKey(name);
-        this.communicatons[name].recievers.push(action.bind(this)); 
+
+        if (name instanceof reciever) {
+            name = reciever.name;
+            action = reciever.action;
+        }
+        else if (action instanceof reciever) 
+            action = reciever.action;
+        else if (typeof action !== 'function') 
+            throw 'pushReciever has the wrong argument types';
+
+        action = action.bind(this);
+        this.communicatons[name].recievers.push(action); 
         return this;
+
     }
 
     pushCommunicant(name, communicant) {
-        if (typeof communicant === 'function')
-            throw 'communicant should not be a function';
+
         this._addCommunicationKey(name);
+        
+        if (name instanceof communicant) {
+            name = communicant.name;
+            communicant = name;
+        }
+        else if (typeof communicant === 'function')
+            throw 'communicant should not be a function';
+        
         this.communicatons[name].communicants.push(communicant);            
         return this;
+
     }
 
     _addCommunicationKey(key) {

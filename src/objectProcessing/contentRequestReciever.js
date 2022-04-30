@@ -1,8 +1,14 @@
-module.exports.makeWorld = (name = 'world') => 
-    room.create(name)
-    .pushReciever(
-        'content request',
-        function (communicant) {
+let reciever = require('./reciever.js');
+
+module.exports = class contentRequestReciever extends reciever {
+
+    constructor () {
+        
+        super();
+        this.name = 'contentRequest';
+        
+        // use arrow syntax to bind this to calling 
+        this.action = (communicant) => {
 
             if (!communicant.sender) throw 'communicant.sender is not defined';
             if (!communicant.searchRegex) throw 'communicant.searchRegex is not defined';
@@ -18,7 +24,7 @@ module.exports.makeWorld = (name = 'world') =>
                     !isNaN(item.value) && 
                     searchRegex.test(item.name)
                 )
-                .map(e => {
+                .map(item => {
 
                     let itemClone = JSON.parse(JSON.stringify(item));
                     
@@ -35,4 +41,6 @@ module.exports.makeWorld = (name = 'world') =>
 
         }
 
-    );
+    }
+
+}
