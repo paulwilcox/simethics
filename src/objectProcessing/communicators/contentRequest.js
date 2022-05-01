@@ -1,4 +1,4 @@
-let communicator = require('./communicator.js');
+let communicator = require('./commiunicator.js');
 
 var makeCommunicant = (
     sender, 
@@ -44,11 +44,12 @@ var reciever = (communicant) => {
 
 }
 
-
-module.exports = class contentRequest extends communicator {
+class contentRequest extends communicator {
 
     constructor() {
         super('contentRequest', makeCommunicant, reciever);
     }
 
 }
+
+module.exports = new contentRequest(); 

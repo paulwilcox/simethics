@@ -1,4 +1,5 @@
 let communicator = require('./communicators/commiunicator.js');
+let renameFunc = require('./general.js').renameFunc;
 
 class room extends Array {
 
@@ -32,52 +33,64 @@ class room extends Array {
     }
 
     push(...items) {
+
         for (let item of items) { 
-            if (item instanceof communicator) {
-                if (item.communicant) this.pushCommunicant(item.communicant);
-                if (item.reciever) this.pushReciever(item.reciever);
-            }
-            else if (typeof item === 'function') {
+            
+            if (typeof item === 'function') 
                 throw 'Item should not be a function.  ' + 
                     'Consider a communicator/reciever ' + 
                     'strategy instead.'; 
+            else if (item.isReciever === true) 
+                this.pushReciever(item);
+            else if (item.isCommunicant === true)
+                this.pushCommunicant(item);
+            else {
                 setParent(item, this);
+                super.push(item);
             }
-            super.push(item);            
+
         }
+
         return this;
+
     }
 
-    pushReciever(name, action) {
+    pushReciever(name, reciever) {
+
+        if ((typeof name !== 'string' || name instanceof String)) {
+            reciever = name;
+            name = reciever.name;
+            if (!name) 
+                throw 'Ad-hoc created reciever must at least have a name';
+        }
+
+        if (typeof reciever !== 'function') 
+            throw 'reciever must be a function';
 
         this._addCommunicationKey(name);
-
-        if (name instanceof communicator) {
-            name = name.name;
-            action = name.reciever;
-        }
-        else if (action instanceof reciever) 
-            action = action.reciever;
-        else if (typeof action !== 'function') 
-            throw 'pushReciever has the wrong argument types';
-
-        action = action.bind(this);
-        this.communicatons[name].recievers.push(action); 
+        renameFunc(reciever, name);
+        reciever.isReciever = true;
+        reciever = reciever.bind(this);
+        this.communicatons[name].recievers.push(reciever); 
         return this;
 
     }
 
     pushCommunicant(name, communicant) {
 
-        this._addCommunicationKey(name);
-        
-        if (name instanceof communicator) {
-            name = name.name;
-            communicant = name.communicant;
+        if ((typeof name !== 'string' || name instanceof String)) {
+            communicant = name;
+            name = communicant.name;
+            if (!communicant.name) 
+                throw 'Ad-hoc created communicant must at least have a name';
         }
-        else if (typeof communicant === 'function')
+
+        if (typeof communicant === 'function')
             throw 'communicant should not be a function';
-        
+
+        this._addCommunicationKey(name);
+        communicant.name = name;
+        communicant.isCommunicant = true;
         this.communicatons[name].communicants.push(communicant);            
         return this;
 

@@ -21,7 +21,7 @@
 */
 let room = require('./room.js');
 let mind = require('./mind.js');
-let contentRequestReciever = require('./contentRequestReciever.js');
+let contentRequestCom = require('./communicators/contentRequest.js');
 
 let dava = 
     new mind('dava')
@@ -40,7 +40,7 @@ let dava =
 
 let world = 
     room.create('world')
-    .pushReciever(contentRequestReciever)
+    .pushReciever(contentRequestCom.reciever)
     .push(
         dava,
         { name: 'switch.pleasure', value: 0.75 }, 
