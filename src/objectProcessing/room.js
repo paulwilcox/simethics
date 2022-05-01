@@ -1,5 +1,4 @@
-let communicant = require('./communicant.js');
-let reciever = require('./reciever.js');
+let communicator = require('./communicators/commiunicator.js');
 
 class room extends Array {
 
@@ -34,28 +33,31 @@ class room extends Array {
 
     push(...items) {
         for (let item of items) { 
-            if (typeof item === 'function')
-                throw 'item should not be a function'; // this may change if use case arises
-            setParent(item, this);
+            if (item instanceof communicator) {
+                if (item.communicant) this.pushCommunicant(item.communicant);
+                if (item.reciever) this.pushReciever(item.reciever);
+            }
+            else if (typeof item === 'function') {
+                throw 'Item should not be a function.  ' + 
+                    'Consider a communicator/reciever ' + 
+                    'strategy instead.'; 
+                setParent(item, this);
+            }
             super.push(item);            
         }
         return this;
     }
 
-// TODO: consider a communicator class instead of a seperate 
-// communicant and reciever class.  Communicator might have
-// communicant and reciever properties.
-
     pushReciever(name, action) {
 
         this._addCommunicationKey(name);
 
-        if (name instanceof reciever) {
-            name = reciever.name;
-            action = reciever.action;
+        if (name instanceof communicator) {
+            name = name.name;
+            action = name.reciever;
         }
         else if (action instanceof reciever) 
-            action = reciever.action;
+            action = action.reciever;
         else if (typeof action !== 'function') 
             throw 'pushReciever has the wrong argument types';
 
@@ -69,9 +71,9 @@ class room extends Array {
 
         this._addCommunicationKey(name);
         
-        if (name instanceof communicant) {
-            name = communicant.name;
-            communicant = name;
+        if (name instanceof communicator) {
+            name = name.name;
+            communicant = name.communicant;
         }
         else if (typeof communicant === 'function')
             throw 'communicant should not be a function';
