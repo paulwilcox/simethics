@@ -51,31 +51,25 @@ class mind extends room {
     }
 
     get pleasure() { return this.find(e => e.name == 'pleasure'); }
-    get objects() { return this.filter(e => e.name && e.name.startsWith('obj.')); }
-    get rawPerceptions() { return this.filter(e => e.name && e.name.startsWith('raw.')); }
+    get objects() { return [...this.filter(e => e.name && e.name.startsWith('obj.'))]; }
+    get rawPerceptions() { return [...this.filter(e => e.name && e.name.startsWith('raw.'))]; }
 
     // Existing latent objects are put put into clarity.  (I may 
     // move the inner clarity algorithm to subsequent activation)
     processObjects() {
 
-        let getRawPerceptionClarity = (elementName) => {
-            let perception = this.rawPerceptions.find(rp => rp.name == elementName);
-            if (!perception) return 0;
-            if (!perception.clarity) return 0;
-            return perception.clarity;
-        }
-
         for (let o of this.objects) {
 
             // Set the parent object clarity based on object match to raw perceptions
             if (o.stage == 'dormant') {
-                let avgSumOfProds = 
-                    o.reduce((agg,element) => {
-                        let rpClarity = getRawPerceptionClarity(element.name);
-                        return agg += element.clarity * rpClarity; 
-                    })
-                    / o.length;
-                o.clarity = avgSumOfProds;
+                let agg = 0;
+                for (let element of o) {
+                    let perception = this.rawPerceptions.find(rp => rp.name == element.name);
+                    if (!element.clarity || !perception || !perception.clarity)
+                        continue;
+                    agg += element.clarity * perception.clarity; 
+                }
+                o.clarity = agg / o.length;
                 o.stage = 'activated';
             }
 

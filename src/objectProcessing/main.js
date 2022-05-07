@@ -23,19 +23,20 @@ let room = require('./room.js');
 let mind = require('./mind.js');
 let contentRequestCom = require('./communicators/contentRequest.js');
 
+// This should come about by the algorithm, but I'm seeding it here
+// to work with object matching before object creation.
+// This room has no parent 'clarity' right now, but it will have one.
+let objAC = room.create('obj.ac').push(
+    // These clarities indicate how important their existence is in the parent object
+    { name: 'raw.pleasure', clarity: 0.75 }, 
+    { name: 'raw.a', clarity: 0.75 },
+    { name: 'raw.c', clarity: 0.75 }
+);
+objAC.stage = 'dormant';
+
 let dava = 
     new mind('dava')
-    .push(
-        // This should come about by the algorithm, but I'm seeding it here
-        // to work with object matching before object creation.
-        // This room has no parent 'clarity' right now, but it will have one.
-        room.create('obj.latent').push(
-            // These clarities indicate how important their existence is in the parent object
-            { name: 'raw.pleasure', clarity: 0.75 }, 
-            { name: 'raw.a', clarity: 0.75 },
-            { name: 'raw.c', clarity: 0.75 }
-        )     
-    )
+    .push(objAC)
     .pushCommunicant('request parent contents', {}); // the starter communicant
 
 let world = 
@@ -55,5 +56,5 @@ world
     .recieve()
     .recieve();
 
-console.log('dava', dava);
+console.log('objAC', objAC);
 
