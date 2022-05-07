@@ -1,5 +1,6 @@
 let room = require('./room.js');
 let contentRequestCom = require('./communicators/contentRequest.js');
+let arraySum = require('./general.js').arraySum;
 
 class mind extends room {
 
@@ -60,46 +61,46 @@ class mind extends room {
 
         for (let o of this.objects) {
 
-            // Set the parent object clarity based on object match to raw perceptions
-            if (o.stage == 'dormant') {
-                let agg = 0;
-                for (let element of o) {
-                    let perception = this.rawPerceptions.find(rp => rp.name == element.name);
-                    if (!element.clarity || !perception || !perception.clarity)
-                        continue;
-                    agg += element.clarity * perception.clarity; 
-                }
-                o.clarity = agg / o.length;
-                o.stage = 'activated';
+            let getRawPerceptionClarity = (rpName) => {
+                let rp = this.rawPerceptions.find(rp => rp.name == rpName);
+                if (!rp || !rp.clarity || isNaN(rp.clarity))
+                    return 0;
+                return rp.clarity;
             }
 
-            // How different is an object to raw perceptions?  If a lot, search the world again. 
-            else if (o.stage == 'activated') {
-                let maxSurprise = o.reduce((agg,element) => {
-                    let rpClarity = getRawPerceptionClarity(element.name);
-                    return agg += Math.abs(element.clarity - rpClarity); 
-                });
+            // Set the parent object clarity based on object match to raw perceptions
+            if (o.stage == 'dormant' || o.stage == 'doubting') 
+                o.clarity = arraySum (o, element => 
+                    (element.clarity || 0) * getRawPerceptionClarity(element.name)
+                ) / o.length;
+
+            // How different is an object to raw perceptions?  If a lot, search the world again.                 
+            if (o.stage == 'dormant') {
+                let maxSurprise = arraySum(o, element => 
+                    Math.abs(element.clarity - getRawPerceptionClarity(element.name))
+                );
                 // TODO: problem here is that intensity (in communicant) triggers change 
                 // in clarity for all items in the world.  We need each individual item
                 // reacting to intensity differently.  This way, when intensty rises, 
                 // other raw perceptions remain constant, but some new ones manifest. 
-                if (maxSurprise > this.supriseThreshold)
+                if (maxSurprise > this.supriseThreshold) {
                     this.pushCommunicant('request parent contents deeply', {});
-                o.stage = 'reviewed';
+                    o.stage = 'doubting';
+                }    
+                else 
+                    o.stage = 'activated';
             }
+            else if (o.stage == 'doubting') 
+                o.stage = 'activated';
 
-            // Still different after review?  Calibrate expectations for next time.
+            // Calibrate expectations (alter inner clarties) for next time.
             // TODO: Account for the expectation that something specifically not 
             // be present (different than it not mattering whether it's present
             // or not).  Maybe throw a pseudo-raw perception with negative clarity?
-            else if (o.stage == 'reviewed') { 
-                for (let element of o) {
-                    let rpClarity = getRawPerceptionClarity(element.name);
-                    // Alter the inner clarities.  Change is like modifying a 
-                    // pseudo-average over time (as though current represents 
-                    // one of 5 instances).
-                    e.clarity = (e.clarity * 4 + rpClarity) / 5; 
-                }
+            if (o.stage == 'activated') { 
+                // A pseudo-average over time (as though current represents one of 5 instances).
+                for (let element of o) 
+                    e.clarity = (e.clarity * 4 + getRawPerceptionClarity(element.name)) / 5; 
                 o.stage = 'calibrated';
             }
 
