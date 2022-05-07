@@ -15,13 +15,13 @@ module.exports = class communicator {
         let oldMaker = communicantMaker;
         communicantMaker = () => {
             let communicant = oldMaker.apply(this, arguments);
-            communicant.name = communicant.name || name;
+            communicant.name = name;
             communicant.isCommunicant = true;
             return communicant;
         }
         this.makeCommunicant = communicantMaker; // must return a communicant
 
-        renameFunc(reciever, reciever.name || name);
+        renameFunc(reciever, name);
         if (typeof reciever !== 'function')
             throw 'reciever must be a function.';
         reciever.isReciever = true;
