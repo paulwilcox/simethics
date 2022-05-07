@@ -13,7 +13,7 @@ module.exports = class communicator {
         // Extend communicantMaker so that whatever communicant object 
         // it makes, it has the 'name' and 'isCommunicant' properties.
         let oldMaker = communicantMaker;
-        communicantMaker = () => {
+        communicantMaker = function() {
             let communicant = oldMaker.apply(this, arguments);
             communicant.name = name;
             communicant.isCommunicant = true;

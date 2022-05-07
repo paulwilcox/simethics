@@ -14,7 +14,7 @@ class mind extends room {
 
             function (communicant) {
                 this.parent.pushCommunicant(
-                    contentRequestCom.makeCommunicant(this, '*', 0.5)
+                    contentRequestCom.makeCommunicant(this, '.*', 0.5)
                 );
                 communicant.garbage = true;
             }        
@@ -25,7 +25,7 @@ class mind extends room {
 
             function (communicant) {
                 this.parent.pushCommunicant(
-                    contentRequestCom.makeCommunicant(this, '*', 1)
+                    contentRequestCom.makeCommunicant(this, '.*', 1)
                 );
                 communicant.garbage = true;
             }        
@@ -57,8 +57,6 @@ class mind extends room {
     // Existing latent objects are put put into clarity.  (I may 
     // move the inner clarity algorithm to subsequent activation)
     processObjects() {
-
-throw 'here' // not reaching
 
         let getRawPerceptionClarity = (elementName) => {
             let perception = this.rawPerceptions.find(rp => rp.name == elementName);

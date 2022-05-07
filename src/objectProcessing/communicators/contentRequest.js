@@ -1,17 +1,17 @@
 let communicator = require('./commiunicator.js');
 
-var makeCommunicant = (
+var makeCommunicant = function (
     sender, 
     searchRegex, 
     searchIntensity
-) => ({
+) { return {
     sender: sender,
     searchRegex: searchRegex,
     searchIntensity: searchIntensity
-})
+}; }
 
-// use arrow syntax to bind this to calling 
-var reciever = (communicant) => {
+// use non-arrow syntax to allow re-bind to calling obj 
+var reciever = function(communicant) {
 
     if (!communicant.sender) throw 'communicant.sender is not defined';
     if (!communicant.searchRegex) throw 'communicant.searchRegex is not defined';
