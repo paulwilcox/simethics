@@ -54,6 +54,7 @@ let world =
 // TODO: loop recieve until some sort of stop
 world
     .recieve()
+    .recieve()
     .recieve();
 
 console.log('objAC', objAC);

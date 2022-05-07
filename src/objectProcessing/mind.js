@@ -43,8 +43,11 @@ class mind extends room {
                         clarity: item.value
                     });
                 communicant.garbage = true;
+                // delete the old ones; 
+                for(let rp of this.rawPerceptions)
+                    rp.garbage = true;
                 this.push(...rawPerceptions);
-                this.processObjects();                
+                this.processObjects();            
             }
 
         );
@@ -88,20 +91,22 @@ class mind extends room {
                     o.stage = 'doubting';
                 }    
                 else 
-                    o.stage = 'activated';
+                    o.stage = 'uncalibrated';
             }
             else if (o.stage == 'doubting') 
-                o.stage = 'activated';
+                o.stage = 'uncalibrated';
 
             // Calibrate expectations (alter inner clarties) for next time.
             // TODO: Account for the expectation that something specifically not 
             // be present (different than it not mattering whether it's present
             // or not).  Maybe throw a pseudo-raw perception with negative clarity?
-            if (o.stage == 'activated') { 
+            if (o.stage == 'uncalibrated') { 
                 // A pseudo-average over time (as though current represents one of 5 instances).
                 for (let element of o) 
-                    e.clarity = (e.clarity * 4 + getRawPerceptionClarity(element.name)) / 5; 
-                o.stage = 'calibrated';
+                    element.clarity = 
+                        (element.clarity * 4 + getRawPerceptionClarity(element.name)) 
+                        / 5; 
+                o.stage = 'activated';
             }
 
         }
