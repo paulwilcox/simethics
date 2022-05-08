@@ -15,7 +15,10 @@ class mind extends room {
 
             function (communicant) {
                 this.parent.pushCommunicant(
-                    contentRequestCom.makeCommunicant(this, '.*', 0.5)
+                    contentRequestCom.makeCommunicant(this, { 
+                        'a|b|d': 0.85,
+                        'c': 0.25 
+                    })
                 );
                 communicant.garbage = true;
             }        
@@ -29,6 +32,7 @@ class mind extends room {
                     contentRequestCom.makeCommunicant(this, '.*', 1)
                 );
                 communicant.garbage = true;
+console.log('why are the mmi values not changing?');
             }        
 
         );
@@ -72,10 +76,13 @@ class mind extends room {
             }
 
             // Set the parent object clarity based on object match to raw perceptions
-            if (o.stage == 'dormant' || o.stage == 'doubting') 
+            if (o.stage == 'dormant' || o.stage == 'doubting') {
+
                 o.clarity = arraySum (o, element => 
                     (element.clarity || 0) * getRawPerceptionClarity(element.name)
                 ) / o.length;
+
+            }
 
             // How different is an object to raw perceptions?  If a lot, search the world again.                 
             if (o.stage == 'dormant') {

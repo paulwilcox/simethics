@@ -2,38 +2,50 @@ let communicator = require('./commiunicator.js');
 
 var makeCommunicant = function (
     sender, 
-    searchRegex, 
-    searchIntensity
+    searchKeysAndIntensities
 ) { return {
     sender: sender,
-    searchRegex: searchRegex,
-    searchIntensity: searchIntensity
+    searchKeysAndIntensities // { 'regex1': Number, 'regex2': Number }
 }; }
 
 // use non-arrow syntax to allow re-bind to calling obj 
 var reciever = function(communicant) {
 
     if (!communicant.sender) throw 'communicant.sender is not defined';
-    if (!communicant.searchRegex) throw 'communicant.searchRegex is not defined';
-    if (!communicant.searchIntensity) throw 'communicant.searchIntensity is not defined';
+    if (!communicant.searchKeysAndIntensities) 
+        throw 'communicant.searchKeysAndIntensities is not defined';
 
-    let searchRegex = new RegExp(communicant.searchRegex);
+    let searchers = 
+        Object.entries(communicant.searchKeysAndIntensities)
+        .map(entry => {
+            let regex = new RegExp(entry[0]);
+            let intensity = entry[1];
+            let test = (itemName) => regex.test(itemName) ? intensity : 0; 
+            return { regex, intensity, test }
+        });
+        
+    let maxMatchedIntensity = (itemName) => Math.max(
+        ...searchers.map(s => s.test(itemName)) 
+    );
+
+console.log('---------recieving contentRequest---------')
 
     let items = 
         this
         .filter(item => 
             item !== communicant && 
             item !== communicant.sender && 
-            !isNaN(item.value) && 
-            searchRegex.test(item.name)
+            !isNaN(item.value) 
         )
         .map(item => {
 
             let itemClone = JSON.parse(JSON.stringify(item));
-            
+
             // To model a continuous version of object permanence.
             // To model the requirement to put in effor to see something
-            itemClone.value *= communicant.searchIntensity; 
+            itemClone.value *= maxMatchedIntensity(item.name); 
+
+console.log({ic: itemClone, mmi: maxMatchedIntensity(item.name)})
 
             return itemClone;
 
