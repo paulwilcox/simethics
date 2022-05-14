@@ -1,4 +1,3 @@
-let communicator = require('./communicators/commiunicator.js');
 let renameFunc = require('./general.js').renameFunc;
 
 class room extends Array {
@@ -106,26 +105,28 @@ class room extends Array {
 
     recieve () {
         
+        // run the core reciever logic
         for (let communication of Object.values(this.communicatons))
         for (let reciever of communication.recievers)
         for (let communicant of communication.communicants) {
-            reciever(communicant);
+            if (!communicant.garbage)
+                reciever(communicant);
         }
 
         // loop object children backwards
         for(let c = this.length - 1; c >= 0; c--) {
 
             let child = this[c];
-            
-            // process the child's recievers
-            if(child.recieve)
-                child.recieve();            
 
             // garbage collect
             if (child.garbage) {
                 this.splice(c,1);
                 setParent(child, null);
             }
+            
+            // process the child's recievers
+            else if (child.recieve)
+                child.recieve();            
 
         }
 
