@@ -28,8 +28,6 @@ var reciever = function(communicant) {
         ...searchers.map(s => s.test(itemName)) 
     );
 
-console.log('---------recieving contentRequest---------')
-
     let items = 
         this
         .filter(item => 
@@ -44,8 +42,6 @@ console.log('---------recieving contentRequest---------')
             // To model a continuous version of object permanence.
             // To model the requirement to put in effor to see something
             itemClone.value *= maxMatchedIntensity(item.name); 
-
-console.log({ic: itemClone, mmi: maxMatchedIntensity(item.name)})
 
             return itemClone;
 

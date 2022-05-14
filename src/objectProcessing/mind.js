@@ -16,8 +16,9 @@ class mind extends room {
             function (communicant) {
                 this.parent.pushCommunicant(
                     contentRequestCom.makeCommunicant(this, { 
-                        'a|b|d': 0.85,
-                        'c': 0.25 
+                        '^a|b|d$': 0.85,
+                        '^c$': 0.25,
+                        '^switch\.pleasure$': 0.25
                     })
                 );
                 communicant.garbage = true;
@@ -29,10 +30,9 @@ class mind extends room {
 
             function (communicant) {
                 this.parent.pushCommunicant(
-                    contentRequestCom.makeCommunicant(this, '.*', 1)
+                    contentRequestCom.makeCommunicant(this, { '.*': 1 })
                 );
                 communicant.garbage = true;
-console.log('why are the mmi values not changing?');
             }        
 
         );
@@ -51,7 +51,7 @@ console.log('why are the mmi values not changing?');
                 for(let rp of this.rawPerceptions)
                     rp.garbage = true;
                 this.push(...rawPerceptions);
-                this.processObjects();            
+                this.processObjects();      
             }
 
         );
