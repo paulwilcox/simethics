@@ -27,6 +27,12 @@ class room extends Array {
 
     }
 
+// TODO: Better garbage collection.
+// Need to add it to the core array.
+// Don't like the way it's happening inside 'recieve'.
+// I'd rather clean up anytime the core objects are queried, from anywhere.
+// Thinking of overriding symbol.iterator and related, but that may not quite be right. 
+
     static create (name) { 
         return new room(name); 
     }

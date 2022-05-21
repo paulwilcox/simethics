@@ -55,6 +55,7 @@ let world =
 world
     .recieve()
     .recieve()
+    .recieve()
     .recieve();
 
 console.log('objAC', objAC);

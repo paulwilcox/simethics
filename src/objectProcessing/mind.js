@@ -75,24 +75,11 @@ class mind extends room {
                 return rp.clarity;
             }
 
-            // Set the parent object clarity based on object match to raw perceptions
-            if (o.stage == 'dormant' || o.stage == 'doubting') {
-
-                o.clarity = arraySum (o, element => 
-                    (element.clarity || 0) * getRawPerceptionClarity(element.name)
-                ) / o.length;
-
-            }
-
             // How different is an object to raw perceptions?  If a lot, search the world again.                 
             if (o.stage == 'dormant') {
                 let maxSurprise = arraySum(o, element => 
                     Math.abs(element.clarity - getRawPerceptionClarity(element.name))
                 );
-                // TODO: problem here is that intensity (in communicant) triggers change 
-                // in clarity for all items in the world.  We need each individual item
-                // reacting to intensity differently.  This way, when intensty rises, 
-                // other raw perceptions remain constant, but some new ones manifest. 
                 if (maxSurprise > this.supriseThreshold) {
                     this.pushCommunicant('request parent contents deeply', {});
                     o.stage = 'doubting';
@@ -115,6 +102,18 @@ class mind extends room {
                         / 5; 
                 o.stage = 'activated';
             }
+
+            // Set the parent object clarity based on object match to raw perceptions
+            o.clarity = arraySum (o, element => {
+                if (o.stage == 'activated')
+                    console.log({
+                        en: element.name, 
+                        ec: element.clarity, 
+                        rpc: getRawPerceptionClarity(element.name), // coming out far lower than expected
+                        rps: this.rawPerceptions
+                    })
+                return (element.clarity || 0) * getRawPerceptionClarity(element.name)
+            }) / o.length;
 
         }
 
