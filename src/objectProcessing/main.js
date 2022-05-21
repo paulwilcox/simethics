@@ -22,6 +22,7 @@
 let room = require('./room.js');
 let mind = require('./mind.js');
 let contentRequestCom = require('./communicators/contentRequest.js');
+let fd = require('fluent-data');
 
 // This should come about by the algorithm, but I'm seeding it here
 // to work with object matching before object creation.
@@ -58,5 +59,9 @@ world
     .recieve()
     .recieve();
 
-console.log('objAC', objAC);
+/* logging */
+
+console.log(objAC.allItems)
+
+fd(objAC.allItems.map(i => ({...i, parent: undefined}))).log();
 

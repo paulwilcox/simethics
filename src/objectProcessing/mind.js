@@ -58,9 +58,9 @@ class mind extends room {
 
     }
 
-    get pleasure() { return this.find(e => e.name == 'pleasure'); }
-    get objects() { return [...this.filter(e => e.name && e.name.startsWith('obj.'))]; }
-    get rawPerceptions() { return [...this.filter(e => e.name && e.name.startsWith('raw.'))]; }
+    get pleasure() { return this.items.find(e => e.name == 'pleasure'); }
+    get objects() { return this.items.filter(e => e.name && e.name.startsWith('obj.')); }
+    get rawPerceptions() { return this.items.filter(e => e.name && e.name.startsWith('raw.')); }
 
     // Existing latent objects are put put into clarity.  (I may 
     // move the inner clarity algorithm to subsequent activation)
@@ -77,7 +77,7 @@ class mind extends room {
 
             // How different is an object to raw perceptions?  If a lot, search the world again.                 
             if (o.stage == 'dormant') {
-                let maxSurprise = arraySum(o, element => 
+                let maxSurprise = arraySum(o.items, element => 
                     Math.abs(element.clarity - getRawPerceptionClarity(element.name))
                 );
                 if (maxSurprise > this.supriseThreshold) {
@@ -96,7 +96,7 @@ class mind extends room {
             // or not).  Maybe throw a pseudo-raw perception with negative clarity?
             if (o.stage == 'uncalibrated') { 
                 // A pseudo-average over time (as though current represents one of 5 instances).
-                for (let element of o) 
+                for (let element of o.items) 
                     element.clarity = 
                         (element.clarity * 4 + getRawPerceptionClarity(element.name)) 
                         / 5; 
@@ -104,7 +104,7 @@ class mind extends room {
             }
 
             // Set the parent object clarity based on object match to raw perceptions
-            o.clarity = arraySum (o, element => {
+            o.clarity = arraySum (o.items, element => {
                 if (o.stage == 'activated')
                     console.log({
                         en: element.name, 

@@ -29,7 +29,7 @@ var reciever = function(communicant) {
     );
 
     let items = 
-        this
+        this.allItems
         .filter(item => 
             item !== communicant && 
             item !== communicant.sender && 

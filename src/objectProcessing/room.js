@@ -1,6 +1,9 @@
-let renameFunc = require('./general.js').renameFunc;
+let garbagables = require('./garbagables.js');
+let g = require('./general.js');
 
-class room extends Array {
+// TODO: consider renaming 'items' to 'children', and 'allItems' to 'items'
+
+class room {
 
     static base = null;
     static loops = 0;
@@ -8,13 +11,13 @@ class room extends Array {
 
     constructor(name) {
 
-        super();
-
         if (room.base === null)
             room.base = this;
 
         if (name)
             this.name = name;
+
+        this.items = new garbagables(this);
 
         // TODO: Getting the communicants and recievers outside the room 
         // makes coding more managable.  However, can I represent object
@@ -23,18 +26,24 @@ class room extends Array {
         // that object represents more of a process or action, or a state
         // of openness, representing communicants (actions) and recievers
         // (listening) is necessary.
-        this.communicatons = {}; // { key: { communicants: [], recievers: [] } }
+        //
+        // Hopefully resolved by 'allItems'
+        this.communications = {}; // { key: { communicants: [], recievers: [] } }
 
     }
 
-// TODO: Better garbage collection.
-// Need to add it to the core array.
-// Don't like the way it's happening inside 'recieve'.
-// I'd rather clean up anytime the core objects are queried, from anywhere.
-// Thinking of overriding symbol.iterator and related, but that may not quite be right. 
-
     static create (name) { 
         return new room(name); 
+    }
+
+    get allItems () {
+        let result = new garbagables(this);
+        result.push(...this.items);
+        for(let com of Object.values(this.communications)) {
+            result.push(...com.communicants);
+            result.push(...com.recievers);
+        }
+        return result;
     }
 
     push(...items) {
@@ -45,14 +54,10 @@ class room extends Array {
                 throw 'Item should not be a function.  ' + 
                     'Consider a communicator/reciever ' + 
                     'strategy instead.'; 
-            else if (item.isReciever === true) 
-                this.pushReciever(item);
-            else if (item.isCommunicant === true)
-                this.pushCommunicant(item);
-            else {
-                setParent(item, this);
-                super.push(item);
-            }
+            
+            if (item.isReciever === true)           this.pushReciever(item);
+            else if (item.isCommunicant === true)   this.pushCommunicant(item);
+            else                                    this.items.push(item);
 
         }
 
@@ -73,10 +78,10 @@ class room extends Array {
             throw 'reciever must be a function';
 
         this._addCommunicationKey(name);
-        renameFunc(reciever, name);
+        g.renameFunc(reciever, name);
         reciever.isReciever = true;
         reciever = reciever.bind(this);
-        this.communicatons[name].recievers.push(reciever); 
+        this.communications[name].recievers.push(reciever); 
         return this;
 
     }
@@ -96,63 +101,37 @@ class room extends Array {
         this._addCommunicationKey(name);
         communicant.name = name;
         communicant.isCommunicant = true;
-        this.communicatons[name].communicants.push(communicant);            
+        this.communications[name].communicants.push(communicant);            
         return this;
 
     }
 
     _addCommunicationKey(key) {
-        if (!this.communicatons[key])
-            this.communicatons[key] = { 
-                recievers: [],
-                communicants: []
+        if (!this.communications[key])
+            this.communications[key] = { 
+                recievers: new garbagables(this),
+                communicants: new garbagables(this)
             };
     }
 
     recieve () {
         
         // run the core reciever logic
-        for (let communication of Object.values(this.communicatons))
+        for (let communication of Object.values(this.communications))
         for (let reciever of communication.recievers)
-        for (let communicant of communication.communicants) {
-            if (!communicant.garbage)
-                reciever(communicant);
-        }
+        for (let communicant of communication.communicants) 
+            reciever(communicant);
 
-        // loop object children backwards
-        for(let c = this.length - 1; c >= 0; c--) {
-
-            let child = this[c];
-
-            // garbage collect
-            if (child.garbage) {
-                this.splice(c,1);
-                setParent(child, null);
-            }
-            
-            // process the child's recievers
-            else if (child.recieve)
-                child.recieve();            
-
+        // recurse to children
+        for(let item of this.items) {
+            if (item.recieve)
+                item.recieve();            
         }
 
         return this;
 
     }
 
-}
-
-// A true property is polluting console.log 
-// (stackoverflow.com/q/37973290)
-function setParent(obj, value) {
-    Object.defineProperty( 
-        obj, 
-        'parent', 
-        { 
-            get: function() { return value; }.bind(value),
-            configurable: true
-        }
-    );
 }
 
 module.exports = room;
