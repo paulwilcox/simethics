@@ -22,7 +22,9 @@
 let room = require('./room.js');
 let mind = require('./mind.js');
 let contentRequestCom = require('./communicators/contentRequest.js');
-let fd = require('fluent-data');
+let g = require('./general.js');
+let util = require('util');
+const garbagables = require('./garbagables.js');
 
 // This should come about by the algorithm, but I'm seeding it here
 // to work with object matching before object creation.
@@ -59,9 +61,34 @@ world
     .recieve()
     .recieve();
 
-/* logging */
+// TODO: working on logging
 
-console.log(objAC.allItems)
+console.log(world)
+console.log('----------------')
 
-fd(objAC.allItems.map(i => ({...i, parent: undefined}))).log();
+/*
+let stringify = (obj) => {
 
+    if (obj instanceof room) obj = obj.allItems;
+    if (obj instanceof garbagables) obj = obj.items;
+
+    if (g.isIterable(obj)) 
+        return g.tableToString(
+            obj.map(item => 
+                  Array.isArray(item) 
+                ? stringify(item) 
+                : item
+            )
+        );
+
+    if (g.isString(obj))
+        return obj;
+
+    return util.inspect(obj); // util.inspect gets rid of circular dependencies
+
+}
+
+console.log(stringify(world));
+*/
+
+console.log(dava.toString());

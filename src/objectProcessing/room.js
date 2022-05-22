@@ -132,6 +132,10 @@ class room {
 
     }
 
+    toString() {
+        return this.allItems.toString();
+    }
+
 }
 
 module.exports = room;

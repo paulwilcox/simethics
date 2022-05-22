@@ -1,3 +1,6 @@
+let g = require('./general.js');
+let util = require('util');
+
 module.exports = class garbagables {
 
     constructor(
@@ -57,6 +60,14 @@ module.exports = class garbagables {
         for (let item of this.items)
             result.push(func(item));
         return result;
+    }
+
+    toString() {
+        let nonSelfReferencingClone = 
+            JSON.parse(JSON.stringify(this.items, g.getCircularReplacer()));
+if (this.parentOfItems.name == 'dava')
+    console.log('dava')
+        return g.tableToString(nonSelfReferencingClone);
     }
 
 }
