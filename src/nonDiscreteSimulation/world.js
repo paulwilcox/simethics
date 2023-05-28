@@ -1,7 +1,14 @@
 let fd = require('fluent-data');
-let solver = require('./solver.js');
+let solver = require('./solver');
+let entityToVariableMapItem = require('./entityToVariableMapItem');
 
 module.exports = class world {
+
+    entities;
+    relations;
+    masterRelation;
+    masterRelationVariables = [];
+    #entityToVariableMap = [];
 
     constructor(
         entities,
@@ -10,37 +17,36 @@ module.exports = class world {
 
         this.entities = entities;        
         this.relations = relations;
-        this.masterRelation = this._composeRelations();
-        this.masterRelationVariables = [];
-        this.caughtProps = []; 
 
-        this._identifyRelationVariables();
-        this._catchProperties(); 
+        this.#composeRelationsIntoMaster();
+        this.#identifyRelationVariables();
+        this.#mapEntitiesToVariables(); 
         
         // calibrate the caught prop flow functions
-        for (let c of this.caughtProps) {
+        for (let mapItem of this.#entityToVariableMap) {
 
-            let prop = c.getProperty();
-            let propStrVal = prop.value.toString();
+            let prop = mapItem.entityPropertyValue;
 
-            c.flowFunc = prop.flowRate || propStrVal;
-            c.remainFunc = 
-                !c.getParentVariable().isSource ? undefined
+            mapItem.flowFunc = prop.flowRate || propStrVal;
+            mapItem.remainFunc = 
+                !mapItem.variable.isSource ? undefined
                 : prop.flowRate === undefined ? propStrVal
-                : `${propStrVal} - ${prop.flowRate}`;
+                : `${prop.value} - ${prop.flowRate}`;
 
         }
 
         // variable-level flow func summing equations
-        let flowFuncSummators = this.masterRelationVariables.map(v => ({
-            variableName: v.name,
-            flowFuncSum: 
-                '(' + 
-                    v.caughtProps
-                    .map(p => `(${p.flowFunc})`)
-                    .join('+') + 
-                ')'
-        }));
+        let flowFuncSummators = 
+            this.masterRelationVariables
+            .map(variable => ({
+                variableName: variable.name,
+                flowFuncSum: 
+                    '(' + 
+                        variable.entityMap
+                        .map(p => `(${p.flowFunc})`)
+                        .join('+') + 
+                    ')'
+            }));
 
         // Time-replace variable-level functions with the appropriate summing equations.
         // This will replace everything on the right-hand side, preserving the left hand
@@ -60,43 +66,43 @@ module.exports = class world {
         }
 
         // Time-replace property-level functions with the appropriate summing equations
-        for (let c of this.caughtProps) {
+        for (let mapItem of this.#entityToVariableMap) {
 
-            let v = c.getParentVariable();
+            let variable = mapItem.variable;
             let timeFuncs = [];
             let ffOfOthersSummator = 
                 '(' + 
-                    v.caughtProps
-                    .filter(cp => cp != c)
-                    .map(cp => `(${cp.flowFunc})`)
+                    variable.entityMap
+                    .filter(otherMapItem => otherMapItem != mapItem)
+                    .map(otherMapItem => `(${otherMapItem.flowFunc})`)
                     .join(' + ') + 
                 ')';
 
-            for (let vFunc of v.funcs) {
+            for (let vFunc of variable.funcs) {
                 let timeReplaced = vFunc.timeReplaced;
                 timeReplaced = timeReplaced.replace(
-                    new RegExp(v.name,'g'),
-                    c.flowFunc
+                    new RegExp(variable.name,'g'),
+                    mapItem.flowFunc
                 );
                 timeReplaced += ' - ' + ffOfOthersSummator;
                 timeFuncs.push(timeReplaced);
             }
 
-            c.timeFuncs = timeFuncs;
+            mapItem.timeFuncs = timeFuncs;
 
         }
         
         // For each caught property, get the earliest positive time for which the 
         // function would resut in the value of the property going out of own boundaries 
-        for (let c of this.caughtProps) {
+        for (let mapItem of this.#entityToVariableMap) {
 
             let firstEscape = null;
-            let prop = c.getProperty();
+            let prop = mapItem.entityPropertyValue;
 
             // Get the earliest time that a function escapes caught prop boundaries.
             // When multiple solutions exist, eliminate any that are not applicable.
             // If it is already out of bounds at t = 0, it is not applicable.
-            for (let tFunc of c.timeFuncs) {
+            for (let tFunc of mapItem.timeFuncs) {
                 let tEscapeTime = getFirstEscape(tFunc, prop);
                 if (tEscapeTime != 0 && (firstEscape == null || tEscapeTime < firstEscape))
                     firstEscape = tEscapeTime;
@@ -107,22 +113,22 @@ module.exports = class world {
                 firstEscape = 0;
 
             // boundaries imposed by the giving object
-            if (c.remainFunc) {
-                let remainEscape = getFirstEscape(c.remainFunc, prop);
+            if (mapItem.remainFunc) {
+                let remainEscape = getFirstEscape(mapItem.remainFunc, prop);
                 if (remainEscape < firstEscape)
                     firstEscape = remainEscape;
             }
 
-            c.firstEscape = firstEscape;
+            mapItem.firstEscape = firstEscape;
 
         }
 
     }
 
     log () {
-        console.log(this.caughtProps.map(c => ({ 
-            name: c.getParentVariable().name, 
-            firstEscape: fd.round(c.firstEscape, 1e-4)
+        console.log(this.#entityToVariableMap.map(mapItem => ({ 
+            name: mapItem.variable.name, 
+            firstEscape: fd.round(mapItem.firstEscape, 1e-4)
         })));
     }
 
@@ -130,7 +136,7 @@ module.exports = class world {
         Requires an array of arrow-style relations (e.g. 'x + y -> x + w')
         Returns a composition of the relations        
     */
-    _composeRelations() {
+    #composeRelationsIntoMaster() {
 
         let sources = [];
         let targets = [];
@@ -146,7 +152,7 @@ module.exports = class world {
             targets.push(`(${parts[1]})`);
         }
         
-        return new String(`${sources.join(' + ')} -> ${targets.join(' + ')}`); 
+        this.masterRelation = `${sources.join(' + ')} -> ${targets.join(' + ')}`; 
 
     }
 
@@ -168,7 +174,7 @@ module.exports = class world {
                             It is an array because many solutions may be possible, 
                             but very frequently it will only have one element.
     */
-    _identifyRelationVariables() {
+    #identifyRelationVariables() {
         
         let getVariablesFromString = (str,type) => 
             str
@@ -185,7 +191,7 @@ module.exports = class world {
             .group(v => v.name)
             .reduce(({
                 name: fd.first(v => v.name),
-                caughtProps: fd.first(v => []),
+                entityMap: fd.first(v => []),
                 isSource: (agg,next) => !!agg || next.type === 'source',
                 isTarget: (agg,next) => !!agg || next.type === 'target'
             }))
@@ -202,36 +208,15 @@ module.exports = class world {
 
     }
 
-    /* 
-
-        Summary:    Matches world properties to the relevant variables in a 
-                    relation.  These are then found in the caughtProps field
-                    in the world as well as the caughtProps
-                    field of each variable name.  
-                    
-        Remarks:    The matches in the caughtProps fields aren't the properties
-                    themselves.  Rather, they're helper objects for working 
-                    with them.  They have the following properties.
-
-                    getProperty:        Get the property that is relevant to
-                                        the relation in question.
-                    getParentVariable:  Get the variable in the relation that 
-                                        is related to the caught property.    
-                    getParentObject:    Get the world object that the caught
-                                        property is a part of. 
-
-    */
-    _catchProperties() {
-        for (let mrVariable of this.masterRelationVariables)
+    // Matches world properties to the relevant variables in the master relation. 
+    // Loads both the main class map and a map on each variable
+    #mapEntitiesToVariables() {
+        for (let variable of this.masterRelationVariables)
         for (let entity of this.entities) 
-            if (entity[mrVariable.name] !== undefined) {
-                let prop = { 
-                    getProperty: () => entity[mrVariable.name],
-                    getParentVariable: () => mrVariable, 
-                    getParentEntity: () => entity
-                };
-                this.caughtProps.push(prop);
-                mrVariable.caughtProps.push(prop);
+            if (entity[variable.name] !== undefined) {
+                let mapItem = new entityToVariableMapItem (variable, entity);
+                this.#entityToVariableMap.push(mapItem);
+                variable.entityMap.push(mapItem);
             }
     }
 
