@@ -1,7 +1,7 @@
 let nerdamer = require('nerdamer');
-require('../node_modules/nerdamer/Algebra.js');
-require('../node_modules/nerdamer/Calculus.js');
-require('../node_modules/nerdamer/Solve.js');
+require('../../node_modules/nerdamer/Algebra.js');
+require('../../node_modules/nerdamer/Calculus.js');
+require('../../node_modules/nerdamer/Solve.js');
 
 class _solver {
 
