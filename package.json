@@ -4,7 +4,7 @@
   "description": "Miscelaneous attempts to simulate ethical phenomena",
   "main": "index.js",
   "scripts": {
-    "world": "node ./src/nonDiscreteSimulation/world.js",
+    "world": "node ./src/nonDiscreteSimulation/main.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [
