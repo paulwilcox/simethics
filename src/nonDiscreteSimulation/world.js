@@ -10,9 +10,11 @@ module.exports = class world {
 
         this.entities = entities;        
         this.relations = relations;
-        this.masterRelation = this._mergeAndParseRelations();
+        this.masterRelation = this._composeRelations();
+        this.masterRelationVariables = [];
         this.caughtProps = []; 
 
+        this._identifyRelationVariables();
         this._catchProperties(); 
         
         // calibrate the caught prop flow functions
@@ -30,7 +32,7 @@ module.exports = class world {
         }
 
         // variable-level flow func summing equations
-        let flowFuncSummators = this.masterRelation.variables.map(v => ({
+        let flowFuncSummators = this.masterRelationVariables.map(v => ({
             variableName: v.name,
             flowFuncSum: 
                 '(' + 
@@ -43,7 +45,7 @@ module.exports = class world {
         // Time-replace variable-level functions with the appropriate summing equations.
         // This will replace everything on the right-hand side, preserving the left hand
         // variable for later parsing at the property-level.  
-        for(let v of this.masterRelation.variables)
+        for(let v of this.masterRelationVariables)
         for(let vf in v.funcs) {
             let timeReplaced = v.funcs[vf];
             for(let ffs of flowFuncSummators) {
@@ -125,19 +127,34 @@ module.exports = class world {
     }
 
     /* 
-
         Requires an array of arrow-style relations (e.g. 'x + y -> x + w')
+        Returns a composition of the relations        
+    */
+    _composeRelations() {
 
-        Returns a string representing the merged relation.  This string is an 
-        object with the following subproperties.
+        let sources = [];
+        let targets = [];
+
+        for (let relation of this.relations) {
+            let parts = 
+                relation.includes('<-') ? relation.split('<-').reverse()
+                : relation.includes('->') ? relation.split('->')
+                : null;
+            if (parts == null)
+                throw 'All relations must have the -> or <- relator';
+            sources.push(`(${parts[0]})`);
+            targets.push(`(${parts[1]})`);
+        }
         
-            sources:        A string representing the part of the merged relation 
-                            with the source variables. 
-            targets:        A string representing the part of the merged relation 
-                            with the target variables.
-            variables:      An array of objects continaing information about each
-                            variable in the relation. 
-                        
+        return new String(`${sources.join(' + ')} -> ${targets.join(' + ')}`); 
+
+    }
+
+    /*
+        Finds variable identifiers in the master relation string, identifies
+        some of their properties and maps them to entities in the world.
+
+        Returns an array of variables.
         The structure of each variable is as follows: 
             
             name:           The name of the variable.. 
@@ -150,38 +167,20 @@ module.exports = class world {
             funcs:          The merged relation solved in terms of the variable.
                             It is an array because many solutions may be possible, 
                             but very frequently it will only have one element.
-        
     */
-    _mergeAndParseRelations() {
-
-        let sources = [];
-        let targets = [];
-
-        for (let relation of this.relations) {
-            let parts = 
-                relation.includes('<-') ? relation.split('<-').reverse()
-                : relation.includes('->') ? relation.split('->')
-                : null;
-            sources.push(`(${parts[0]})`);
-            targets.push(`(${parts[1]})`);
-        }
+    _identifyRelationVariables() {
         
-        sources = sources.join(' + ');
-        targets = targets.join(' + ');
-
-        let relation = new String(`${sources} -> ${targets}`); 
-        relation.sources = sources;
-        relation.targets = targets; 
-        
-        let getVarFromString = (str,type) => 
+        let getVariablesFromString = (str,type) => 
             str
             .match(/[A-Z,a-z,_]+/g)
             .map(name => ({ name, type }));
 
-        relation.variables = 
+        let [sources, targets] = this.masterRelation.split('->')
+
+        this.masterRelationVariables = 
             fd([
-                ...getVarFromString(sources, 'source'),
-                ...getVarFromString(targets, 'targers')
+                ...getVariablesFromString(sources, 'source'),
+                ...getVariablesFromString(targets, 'target')
             ])
             .group(v => v.name)
             .reduce(({
@@ -194,14 +193,12 @@ module.exports = class world {
 
         // Relations from the perspective of the variable.
         // Usually just one, but the solution could produce more than one.
-        for (let v of relation.variables) 
-            v.funcs =          
-                solver(relation.replace('->', '='))
-                .solveFor(v.name)
+        for (let variable of this.masterRelationVariables) 
+            variable.funcs =          
+                solver(this.masterRelation.replace('->', '='))
+                .solveFor(variable.name)
                 .get()
-                .map(f => new String(`${v.name} = ${f}`));
-
-        return relation;
+                .map(f => new String(`${variable.name} = ${f}`));
 
     }
 
@@ -225,13 +222,13 @@ module.exports = class world {
 
     */
     _catchProperties() {
-        for (let mrVariable of this.masterRelation.variables)
+        for (let mrVariable of this.masterRelationVariables)
         for (let entity of this.entities) 
             if (entity[mrVariable.name] !== undefined) {
                 let prop = { 
                     getProperty: () => entity[mrVariable.name],
                     getParentVariable: () => mrVariable, 
-                    getParentObject: () => entity
+                    getParentEntity: () => entity
                 };
                 this.caughtProps.push(prop);
                 mrVariable.caughtProps.push(prop);
