@@ -1,6 +1,7 @@
 let fd = require('fluent-data');
 let solver = require('./solver');
 let entityToVariableMapItem = require('./entityToVariableMapItem');
+let relationVariable = require('./relationVariable');
 
 module.exports = class world {
 
@@ -189,22 +190,14 @@ module.exports = class world {
                 ...getVariablesFromString(targets, 'target')
             ])
             .group(v => v.name)
-            .reduce(({
+            .reduce({
+                world: fd.first(v => this),
                 name: fd.first(v => v.name),
                 entityMap: fd.first(v => []),
                 isSource: (agg,next) => !!agg || next.type === 'source',
                 isTarget: (agg,next) => !!agg || next.type === 'target'
-            }))
-            .get();
-
-        // Relations from the perspective of the variable.
-        // Usually just one, but the solution could produce more than one.
-        for (let variable of this.masterRelationVariables) 
-            variable.funcs =          
-                solver(this.masterRelation.replace('->', '='))
-                .solveFor(variable.name)
-                .get()
-                .map(f => new String(`${variable.name} = ${f}`));
+            })
+            .get(row => new relationVariable(row));
 
     }
 
