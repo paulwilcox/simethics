@@ -1,5 +1,6 @@
 let fd = require('fluent-data');
 let relationVariable = require('./relationVariable');
+let solution = require('./solution');
 
 module.exports = class {
 
@@ -10,6 +11,7 @@ module.exports = class {
         this.#world = world;
         this.#variables = this.#extractRelationVariables();
         this.#substituteVariableSolutions();
+        this.#substitutePropertySolutions();
     }
 
     [Symbol.iterator]() {
@@ -78,5 +80,36 @@ module.exports = class {
             }
 
         }
+
+    }
+
+    // substitute property-level solutions with the appropriate summing equations
+    #substitutePropertySolutions () {
+
+        for (let mapItem of this.entityMap) {
+
+            let variable = mapItem.variable;
+
+            let masterFlowRateFromOthers = 
+                '(' + 
+                    variable.entityMap
+                    .filter(otherMapItem => otherMapItem != mapItem)
+                    .map(otherMapItem => `(${otherMapItem.flowRate})`)
+                    .join(' + ') + 
+                ')';
+
+            for (let variableSolution of variable.solutions) {
+                let propertySolution = new solution();
+                propertySolution.substituted = 
+                    variableSolution.substituted.replace(
+                        new RegExp(variable.name,'g'),
+                        mapItem.flowRate
+                    );
+                propertySolution.substituted += ' - ' + masterFlowRateFromOthers;
+                mapItem.solutions.push(propertySolution);
+            }
+
+        }
+
     }
 }

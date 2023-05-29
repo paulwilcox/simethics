@@ -19,32 +19,7 @@ module.exports = class world {
 
         this.#composeRelationsIntoMaster();
         this.variables = new relationVariables(this);
-        
-        // Time-replace property-level functions with the appropriate summing equations
-        for (let mapItem of this.variables.entityMap) {
-
-            let variable = mapItem.variable;
-
-            let ffOfOthersSummator = 
-                '(' + 
-                    variable.entityMap
-                    .filter(otherMapItem => otherMapItem != mapItem)
-                    .map(otherMapItem => `(${otherMapItem.flowRate})`)
-                    .join(' + ') + 
-                ')';
-
-            for (let solution of variable.solutions) {
-                let substituted = solution.substituted;
-                substituted = substituted.replace(
-                    new RegExp(variable.name,'g'),
-                    mapItem.flowRate
-                );
-                substituted += ' - ' + ffOfOthersSummator;
-                mapItem.timeSolutions.push(substituted);
-            }
-
-        }
-        
+                
         // For each caught property, get the earliest positive time for which the 
         // function would resut in the value of the property going out of own boundaries 
         for (let mapItem of this.variables.entityMap) {
@@ -55,10 +30,10 @@ module.exports = class world {
             // Get the earliest time that a function escapes caught prop boundaries.
             // When multiple solutions exist, eliminate any that are not applicable.
             // If it is already out of bounds at t = 0, it is not applicable.
-            for (let solution of mapItem.timeSolutions) {
-                let tEscapeTime = getFirstEscape(solution, prop);
-                if (tEscapeTime != 0 && (firstEscape == null || tEscapeTime < firstEscape))
-                    firstEscape = tEscapeTime;
+            for (let solution of mapItem.solutions) {
+                let escapeTime = getFirstEscape(solution.substituted, prop);
+                if (escapeTime != 0 && (firstEscape == null || escapeTime < firstEscape))
+                    firstEscape = escapeTime;
             }
 
             // If no first escape solutions are applicable, set the earliest escape time to 0.
@@ -67,9 +42,9 @@ module.exports = class world {
 
             // boundaries imposed by the giving object
             if (mapItem.remainRate) {
-                let remainEscape = getFirstEscape(mapItem.remainRate, prop);
-                if (remainEscape < firstEscape)
-                    firstEscape = remainEscape;
+                let escapeTime = getFirstEscape(mapItem.remainRate, prop);
+                if (escapeTime < firstEscape)
+                    firstEscape = escapeTime;
             }
 
             mapItem.firstEscape = firstEscape;

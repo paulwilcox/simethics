@@ -3,7 +3,7 @@ module.exports = class entityToVariableMapItem {
     variable;
     entity;
     remainRate;
-    timeSolutions = [];
+    solutions = [];
 
     get property () { return this.entity[this.variable.name]; }
     get flowRate () { return this.property.flowRate; }
