@@ -1,5 +1,6 @@
 let solver = require('./solver');
 let entityToVariableMapItem = require('./entityToVariableMapItem');
+let solution = require('./solution');
 
 module.exports = class {
 
@@ -7,7 +8,7 @@ module.exports = class {
     isSource = false; // Is the variable a source in the master relation?
     isTarget = false; // Is the variable a target in the master relation?
     entityMap = []; // What world entities actually relate to the variable (matched using entity property names)
-    funcs = []; // The merged relation solved in terms of the variable (multiple possible, usually only one)
+    solutions = []; // The merged relation solved in terms of the variable (multiple possible, usually only one)
     #world;
 
     constructor({
@@ -30,11 +31,15 @@ module.exports = class {
             }
 
         // Solve the master relation solved in terms of the variable (multiple possible, usually only one)
-        this.funcs = solver(world.masterRelation.replace('->', '='))
+        this.solutions = solver(world.masterRelation.replace('->', '='))
             .solveFor(name)
             .get()
-            .map(f => new String(`${name} = ${f}`));
-
+            .map(f => {
+                let _solution = new solution(); 
+                _solution.algebraic = `${name} = ${f}`;
+                return _solution;
+            })
+            
     }
 
 }

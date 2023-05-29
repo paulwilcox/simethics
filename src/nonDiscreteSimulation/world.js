@@ -20,19 +20,6 @@ module.exports = class world {
         this.#composeRelationsIntoMaster();
         this.variables = new relationVariables(this);
         
-        // calibrate the caught prop flow functions
-        for (let mapItem of this.variables.entityMap) {
-
-            let prop = mapItem.entityPropertyValue;
-
-            mapItem.flowFunc = prop.flowRate || propStrVal;
-            mapItem.remainFunc = 
-                !mapItem.variable.isSource ? undefined
-                : prop.flowRate === undefined ? propStrVal
-                : `${prop.value} - ${prop.flowRate}`;
-
-        }
-
         // variable-level flow func summing equations
         let flowFuncSummators = 
             fd(this.variables)
@@ -41,7 +28,7 @@ module.exports = class world {
                 flowFuncSum: 
                     '(' + 
                     variable.entityMap
-                        .map(p => `(${p.flowFunc})`)
+                        .map(mapItem => `(${mapItem.flowRate})`)
                         .join('+') + 
                     ')'
             }));
@@ -50,8 +37,8 @@ module.exports = class world {
         // This will replace everything on the right-hand side, preserving the left hand
         // variable for later parsing at the property-level.  
         for(let v of this.variables)
-        for(let vf in v.funcs) {
-            let timeReplaced = v.funcs[vf];
+        for(let vf in v.solutions) {
+            let timeReplaced = v.solutions[vf].algebraic;
             for(let ffs of flowFuncSummators) {
                 if (v.name === ffs.variableName)
                     continue;
@@ -60,33 +47,31 @@ module.exports = class world {
                     ffs.flowFuncSum
                 ); 
             }
-            v.funcs[vf].timeReplaced = timeReplaced;
+            v.solutions[vf].timeReplaced = timeReplaced;
         }
 
         // Time-replace property-level functions with the appropriate summing equations
         for (let mapItem of this.variables.entityMap) {
 
             let variable = mapItem.variable;
-            let timeFuncs = [];
+
             let ffOfOthersSummator = 
                 '(' + 
                     variable.entityMap
                     .filter(otherMapItem => otherMapItem != mapItem)
-                    .map(otherMapItem => `(${otherMapItem.flowFunc})`)
+                    .map(otherMapItem => `(${otherMapItem.flowRate})`)
                     .join(' + ') + 
                 ')';
 
-            for (let vFunc of variable.funcs) {
+            for (let vFunc of variable.solutions) {
                 let timeReplaced = vFunc.timeReplaced;
                 timeReplaced = timeReplaced.replace(
                     new RegExp(variable.name,'g'),
-                    mapItem.flowFunc
+                    mapItem.flowRate
                 );
                 timeReplaced += ' - ' + ffOfOthersSummator;
-                timeFuncs.push(timeReplaced);
+                mapItem.timeSolutions.push(timeReplaced);
             }
-
-            mapItem.timeFuncs = timeFuncs;
 
         }
         
@@ -95,13 +80,13 @@ module.exports = class world {
         for (let mapItem of this.variables.entityMap) {
 
             let firstEscape = null;
-            let prop = mapItem.entityPropertyValue;
+            let prop = mapItem.property;
 
             // Get the earliest time that a function escapes caught prop boundaries.
             // When multiple solutions exist, eliminate any that are not applicable.
             // If it is already out of bounds at t = 0, it is not applicable.
-            for (let tFunc of mapItem.timeFuncs) {
-                let tEscapeTime = getFirstEscape(tFunc, prop);
+            for (let solution of mapItem.timeSolutions) {
+                let tEscapeTime = getFirstEscape(solution, prop);
                 if (tEscapeTime != 0 && (firstEscape == null || tEscapeTime < firstEscape))
                     firstEscape = tEscapeTime;
             }
@@ -111,8 +96,8 @@ module.exports = class world {
                 firstEscape = 0;
 
             // boundaries imposed by the giving object
-            if (mapItem.remainFunc) {
-                let remainEscape = getFirstEscape(mapItem.remainFunc, prop);
+            if (mapItem.remainRate) {
+                let remainEscape = getFirstEscape(mapItem.remainRate, prop);
                 if (remainEscape < firstEscape)
                     firstEscape = remainEscape;
             }
@@ -124,10 +109,13 @@ module.exports = class world {
     }
 
     log () {
-        console.log(fd(this.variables.entityMap).get(mapItem => ({ 
-            name: mapItem.variable.name, 
-            firstEscape: fd.round(mapItem.firstEscape, 1e-4)
-        })));
+        console.log(
+            fd(this.variables.entityMap)
+                .get(mapItem => ({ 
+                    name: mapItem.variable.name, 
+                    firstEscape: fd.round(mapItem.firstEscape, 1e-4)
+                }))
+        );
     }
 
     /* 
