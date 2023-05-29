@@ -1,5 +1,5 @@
 let solver = require('./solver');
-let entityToVariableMapItem = require('./entityToVariableMapItem');
+let variableToEntityMapItem = require('./variableToEntityMapItem');
 let solution = require('./solution');
 
 module.exports = class {
@@ -27,7 +27,7 @@ module.exports = class {
         // populate this.entityMap
         for (let entity of world.entities) 
             if (entity[name] !== undefined) {
-                let mapItem = new entityToVariableMapItem (this, entity);
+                let mapItem = new variableToEntityMapItem (this, entity);
                 this.entityMap.push(mapItem);
             }
 

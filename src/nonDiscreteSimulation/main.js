@@ -1,5 +1,7 @@
-let bnm = require('./boundNumberMaker.js');
+let boundNumber = require('./boundNumber');
 let world = require('./world.js')
+
+let v = (val) => new boundNumber().setValue(val);
 
 let time = { 
     previous: null, 
@@ -13,28 +15,25 @@ let time = {
     }
 };
 
-let _world = [];
-let n = bnm(time);
+let entities = [
 
-_world.push(
-
-    { metal: n(50).l(0).f('2t'), rock: n(100).l(0).f('0.5t') },
-    { metal: n(25).l(0).f('2t'), rock: n(50).l(0).f('0.5t') },
+    { metal: v(50).l(0).f('2t'), rock: v(100).l(0).f('0.5t') },
+    { metal: v(25).l(0).f('2t'), rock: v(50).l(0).f('0.5t') },
 
     { 
         name: 'Ariceli', 
-        happiness: n(0).l(-100).u(100).f('10t'), 
-        energy: n(20).l(0).u(100).f('5t') 
+        happiness: v(0).l(-100).u(100).f('10t'), 
+        energy: v(20).l(0).u(100).f('5t') 
     },
     { 
         name: 'Aaron', 
-        happiness: n(0).l(-100).u(100).f('5t'), 
-        energy: n(35).l(0).u(100).f('5t') 
+        happiness: v(0).l(-100).u(100).f('5t'), 
+        energy: v(35).l(0).u(100).f('5t') 
     }, 
 
     { name: 'dummy2' }
 
-);
+];
 
 let relations = [
     '2*happiness <- metal^2 + 2*energy',
@@ -51,7 +50,7 @@ let relations = [
 //  - Instead, it just changes the first escape of happiness.  Why?
 // TODO: I don't think when we uncatch properties we kill the whole merged relation.
 //  - Perhaps we just set flow rates to 0 and reprocess? 
-new world(_world, relations).log();
+new world(entities, relations).log();
 
 
 // I think it's going to be important to better apply a '+' or '-' to 

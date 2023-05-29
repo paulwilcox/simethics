@@ -1,8 +1,4 @@
-module.exports = function boundNumberMaker(timeRef) {
-    return (num) => new boundNumber(timeRef).setValue(num); 
-}
-
-class boundNumber {
+module.exports = class boundNumber {
 
     constructor() {
         this.value = undefined;
@@ -56,7 +52,5 @@ class boundNumber {
     }
 
 }
-
-boundNumber.prototype.toString = function() { return ''; }
 
 

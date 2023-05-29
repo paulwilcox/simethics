@@ -1,5 +1,5 @@
 let fd = require('fluent-data');
-let relationVariable = require('./relationVariable');
+let variable = require('./variable');
 let solution = require('./solution');
 
 module.exports = class {
@@ -53,7 +53,7 @@ module.exports = class {
                 isSource: (agg,next) => !!agg || next.type === 'source',
                 isTarget: (agg,next) => !!agg || next.type === 'target'
             })
-            .get(row => new relationVariable(row));
+            .get(row => new variable(row));
 
         return variables;
 

@@ -1,6 +1,6 @@
 let fd = require('fluent-data');
 let solver = require('./solver');
-let relationVariables = require('./relationVariables');
+let variables = require('./variables');
 
 module.exports = class world {
 
@@ -18,7 +18,7 @@ module.exports = class world {
         this.relations = relations;
 
         this.#composeRelationsIntoMaster();
-        this.variables = new relationVariables(this);
+        this.variables = new variables(this);
                 
         // For each caught property, get the earliest positive time for which the 
         // function would resut in the value of the property going out of own boundaries 
