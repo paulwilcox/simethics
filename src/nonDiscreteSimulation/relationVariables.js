@@ -9,6 +9,7 @@ module.exports = class {
     constructor(world) {
         this.#world = world;
         this.#variables = this.#extractRelationVariables();
+        this.#substituteVariableSolutions();
     }
 
     [Symbol.iterator]() {
@@ -56,4 +57,26 @@ module.exports = class {
 
     }    
 
+    // Time-replace variable-level functions with the appropriate summing equations.
+    // This will replace everything on the right-hand side, preserving the left hand
+    // variable for later parsing at the property-level.  
+    #substituteVariableSolutions () {
+
+        for(let variable of this.#variables)
+        for(let solution of variable.solutions) {
+
+            solution.substituted = solution.algebraic;
+
+            for(let otherVariable of this.#variables) {
+                if (variable.name === otherVariable.name)
+                    continue;
+                solution.substituted = 
+                    solution.substituted.replace(
+                        new RegExp(otherVariable.name,'g'),
+                        otherVariable.masterFlowRate
+                    ); 
+            }
+
+        }
+    }
 }

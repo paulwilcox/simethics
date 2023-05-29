@@ -9,6 +9,7 @@ module.exports = class {
     isTarget = false; // Is the variable a target in the master relation?
     entityMap = []; // What world entities actually relate to the variable (matched using entity property names)
     solutions = []; // The merged relation solved in terms of the variable (multiple possible, usually only one)
+    masterFlowRate; // The composition of all flow rates from the mapped entities
     #world;
 
     constructor({
@@ -23,14 +24,13 @@ module.exports = class {
         this.isSource = isSource;
         this.isTarget = isTarget;
 
-        // match world entity properties this variable from the master relation. 
+        // populate this.entityMap
         for (let entity of world.entities) 
             if (entity[name] !== undefined) {
                 let mapItem = new entityToVariableMapItem (this, entity);
                 this.entityMap.push(mapItem);
             }
 
-        // Solve the master relation solved in terms of the variable (multiple possible, usually only one)
         this.solutions = solver(world.masterRelation.replace('->', '='))
             .solveFor(name)
             .get()
@@ -40,6 +40,13 @@ module.exports = class {
                 return _solution;
             })
             
+        this.masterFlowRate =
+            '(' + 
+                this.entityMap
+                .map(mapItem => `(${mapItem.flowRate})`)
+                .join('+') + 
+            ')';
+
     }
 
 }

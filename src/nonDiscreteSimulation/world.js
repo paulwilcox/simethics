@@ -20,36 +20,6 @@ module.exports = class world {
         this.#composeRelationsIntoMaster();
         this.variables = new relationVariables(this);
         
-        // variable-level flow func summing equations
-        let flowFuncSummators = 
-            fd(this.variables)
-            .get(variable => ({
-                variableName: variable.name,
-                flowFuncSum: 
-                    '(' + 
-                    variable.entityMap
-                        .map(mapItem => `(${mapItem.flowRate})`)
-                        .join('+') + 
-                    ')'
-            }));
-
-        // Time-replace variable-level functions with the appropriate summing equations.
-        // This will replace everything on the right-hand side, preserving the left hand
-        // variable for later parsing at the property-level.  
-        for(let v of this.variables)
-        for(let vf in v.solutions) {
-            let timeReplaced = v.solutions[vf].algebraic;
-            for(let ffs of flowFuncSummators) {
-                if (v.name === ffs.variableName)
-                    continue;
-                timeReplaced = timeReplaced.replace(
-                    new RegExp(ffs.variableName,'g'),
-                    ffs.flowFuncSum
-                ); 
-            }
-            v.solutions[vf].timeReplaced = timeReplaced;
-        }
-
         // Time-replace property-level functions with the appropriate summing equations
         for (let mapItem of this.variables.entityMap) {
 
@@ -63,14 +33,14 @@ module.exports = class world {
                     .join(' + ') + 
                 ')';
 
-            for (let vFunc of variable.solutions) {
-                let timeReplaced = vFunc.timeReplaced;
-                timeReplaced = timeReplaced.replace(
+            for (let solution of variable.solutions) {
+                let substituted = solution.substituted;
+                substituted = substituted.replace(
                     new RegExp(variable.name,'g'),
                     mapItem.flowRate
                 );
-                timeReplaced += ' - ' + ffOfOthersSummator;
-                mapItem.timeSolutions.push(timeReplaced);
+                substituted += ' - ' + ffOfOthersSummator;
+                mapItem.timeSolutions.push(substituted);
             }
 
         }
