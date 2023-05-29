@@ -1,7 +1,7 @@
 let boundNumber = require('./boundNumber');
 let world = require('./world.js')
 
-let v = (val) => new boundNumber().setValue(val);
+let n = (val) => new boundNumber().setValue(val);
 
 let time = { 
     previous: null, 
@@ -17,18 +17,18 @@ let time = {
 
 let entities = [
 
-    { metal: v(50).l(0).f('2t'), rock: v(100).l(0).f('0.5t') },
-    { metal: v(25).l(0).f('2t'), rock: v(50).l(0).f('0.5t') },
+    { metal: n(50).l(0).f('2t'), rock: n(100).l(0).f('0.5t') },
+    { metal: n(25).l(0).f('2t'), rock: n(50).l(0).f('0.5t') },
 
     { 
         name: 'Ariceli', 
-        happiness: v(0).l(-100).u(100).f('10t'), 
-        energy: v(20).l(0).u(100).f('5t') 
+        happiness: n(0).l(-100).u(100).f('10t'), 
+        energy: n(20).l(0).u(100).f('5t') 
     },
     { 
         name: 'Aaron', 
-        happiness: v(0).l(-100).u(100).f('5t'), 
-        energy: v(35).l(0).u(100).f('5t') 
+        happiness: n(0).l(-100).u(100).f('5t'), 
+        energy: n(35).l(0).u(100).f('5t') 
     }, 
 
     { name: 'dummy2' }
@@ -38,7 +38,7 @@ let entities = [
 let relations = [
     '2*happiness <- metal^2 + 2*energy',
     '-0.25*happiness <- 0.5*rock',
-    '1.5*rock <- 7*metal + energy' // TODO: adding this gives an error
+    '1.5*rock <- 7*metal + energy' 
 ]
 
 // TODO: Uncatch some properties.  

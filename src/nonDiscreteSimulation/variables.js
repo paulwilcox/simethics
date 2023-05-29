@@ -59,9 +59,15 @@ module.exports = class {
 
     }    
 
-    // Time-replace variable-level functions with the appropriate summing equations.
-    // This will replace everything on the right-hand side, preserving the left hand
-    // variable for later parsing at the property-level.  
+    // Substitute variable-level solutions with the actual values of the 'other' variables
+    // - This will replace everything on the right-hand side, preserving the left hand
+    //   variable for later parsing at the property-level.  
+    // - For instance: 
+    //     > Algebraic: happiness = 10*(-rock+3*energy)
+    //     > Turns into:   happiness = 10*(-0.5t+3*(5t+3t)) 
+    //     > Given that:   rock.flowRate = 0.5t & energyA.flowRate = 5t & energyB.flowRate = 3t
+    // - Sort of.  There will probably be more parentheses
+    // - Notice that 'happiness', the 'current' variable, is untouched.
     #substituteVariableSolutions () {
 
         for(let variable of this.#variables)
@@ -83,7 +89,17 @@ module.exports = class {
 
     }
 
-    // substitute property-level solutions with the appropriate summing equations
+    // Substitute property-level solutions with the actual values of the 'current' variable
+    // - This will finish the job and replace the left hand side of variable-level solutions
+    // - For instance:
+    //     > Variable-Level: happiness = 10*(-0.5t+3*(5t+3t)) 
+    //     > Turns into:     10t = 10*(-0.5t+3*(5t+3t)) 
+    //     > Given that:     happiness.flowRate = 10t & there is only 1 happiness entity
+    // - If there are other happiness entities, the others get subtracted.  
+    // - For instance:
+    //     > Variable-Level: happiness = 10*(-0.5t+3*(5t+3t)) 
+    //     > Turns into:     7t = 10*(-0.5t+3*(5t+3t)) -3t
+    //     > Given that:     happinessA.flowRate = 7t & happinessB.flowRate = 3t & happinessA is current
     #substitutePropertySolutions () {
 
         for (let mapItem of this.entityMap) {
