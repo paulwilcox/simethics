@@ -1,15 +1,13 @@
 let fd = require('fluent-data');
 let solver = require('./solver');
-let entityToVariableMapItem = require('./entityToVariableMapItem');
-let relationVariable = require('./relationVariable');
+let relationVariables = require('./relationVariables');
 
 module.exports = class world {
 
     entities;
     relations;
     masterRelation;
-    masterRelationVariables = [];
-    #entityToVariableMap = [];
+    variables;
 
     constructor(
         entities,
@@ -20,11 +18,10 @@ module.exports = class world {
         this.relations = relations;
 
         this.#composeRelationsIntoMaster();
-        this.#identifyRelationVariables();
-        this.#mapEntitiesToVariables(); 
+        this.variables = new relationVariables(this);
         
         // calibrate the caught prop flow functions
-        for (let mapItem of this.#entityToVariableMap) {
+        for (let mapItem of this.variables.entityMap) {
 
             let prop = mapItem.entityPropertyValue;
 
@@ -38,12 +35,12 @@ module.exports = class world {
 
         // variable-level flow func summing equations
         let flowFuncSummators = 
-            this.masterRelationVariables
-            .map(variable => ({
+            fd(this.variables)
+            .get(variable => ({
                 variableName: variable.name,
                 flowFuncSum: 
                     '(' + 
-                        variable.entityMap
+                    variable.entityMap
                         .map(p => `(${p.flowFunc})`)
                         .join('+') + 
                     ')'
@@ -52,7 +49,7 @@ module.exports = class world {
         // Time-replace variable-level functions with the appropriate summing equations.
         // This will replace everything on the right-hand side, preserving the left hand
         // variable for later parsing at the property-level.  
-        for(let v of this.masterRelationVariables)
+        for(let v of this.variables)
         for(let vf in v.funcs) {
             let timeReplaced = v.funcs[vf];
             for(let ffs of flowFuncSummators) {
@@ -67,7 +64,7 @@ module.exports = class world {
         }
 
         // Time-replace property-level functions with the appropriate summing equations
-        for (let mapItem of this.#entityToVariableMap) {
+        for (let mapItem of this.variables.entityMap) {
 
             let variable = mapItem.variable;
             let timeFuncs = [];
@@ -95,7 +92,7 @@ module.exports = class world {
         
         // For each caught property, get the earliest positive time for which the 
         // function would resut in the value of the property going out of own boundaries 
-        for (let mapItem of this.#entityToVariableMap) {
+        for (let mapItem of this.variables.entityMap) {
 
             let firstEscape = null;
             let prop = mapItem.entityPropertyValue;
@@ -127,7 +124,7 @@ module.exports = class world {
     }
 
     log () {
-        console.log(this.#entityToVariableMap.map(mapItem => ({ 
+        console.log(fd(this.variables.entityMap).get(mapItem => ({ 
             name: mapItem.variable.name, 
             firstEscape: fd.round(mapItem.firstEscape, 1e-4)
         })));
@@ -155,62 +152,6 @@ module.exports = class world {
         
         this.masterRelation = `${sources.join(' + ')} -> ${targets.join(' + ')}`; 
 
-    }
-
-    /*
-        Finds variable identifiers in the master relation string, identifies
-        some of their properties and maps them to entities in the world.
-
-        Returns an array of variables.
-        The structure of each variable is as follows: 
-            
-            name:           The name of the variable.. 
-            caughtProps:    An array with references to any caught world properties
-                            that can be associated with the variable name.  It 
-                            starts out as empty but gets filled when properties are
-                            caught.
-            isSource:       True if the variable is an input to the relation. 
-            isTarget:       False if the variable is an output of the relation. 
-            funcs:          The merged relation solved in terms of the variable.
-                            It is an array because many solutions may be possible, 
-                            but very frequently it will only have one element.
-    */
-    #identifyRelationVariables() {
-        
-        let getVariablesFromString = (str,type) => 
-            str
-            .match(/[A-Z,a-z,_]+/g)
-            .map(name => ({ name, type }));
-
-        let [sources, targets] = this.masterRelation.split('->')
-
-        this.masterRelationVariables = 
-            fd([
-                ...getVariablesFromString(sources, 'source'),
-                ...getVariablesFromString(targets, 'target')
-            ])
-            .group(v => v.name)
-            .reduce({
-                world: fd.first(v => this),
-                name: fd.first(v => v.name),
-                entityMap: fd.first(v => []),
-                isSource: (agg,next) => !!agg || next.type === 'source',
-                isTarget: (agg,next) => !!agg || next.type === 'target'
-            })
-            .get(row => new relationVariable(row));
-
-    }
-
-    // Matches world properties to the relevant variables in the master relation. 
-    // Loads both the main class map and a map on each variable
-    #mapEntitiesToVariables() {
-        for (let variable of this.masterRelationVariables)
-        for (let entity of this.entities) 
-            if (entity[variable.name] !== undefined) {
-                let mapItem = new entityToVariableMapItem (variable, entity);
-                this.#entityToVariableMap.push(mapItem);
-                variable.entityMap.push(mapItem);
-            }
     }
 
 }
