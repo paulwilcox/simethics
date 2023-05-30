@@ -31,7 +31,7 @@ module.exports = class {
                 this.entityMap.push(mapItem);
             }
 
-        this.solutions = solver(world.masterRelation.replace('->', '='))
+        this.solutions = solver(this.#world.masterRelation.replace('->', '='))
             .solveFor(name)
             .get()
             .map(f => {
