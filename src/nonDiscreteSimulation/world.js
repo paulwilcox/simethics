@@ -13,16 +13,14 @@ module.exports = class {
         entities,
         relations // an array of directional relations (eg. 'w + x <- y + z'
     ) {
-
         this.entities = entities;        
         this.relations = relations;
+        this.#processRelationVariables();
+    }
 
-        this.#composeRelationsIntoMaster();
-        this.#extractRelationVariables();
-        this.#substituteVariableSolutions();
-        this.#substitutePropertySolutions();
-        this.#calculateFirstEscapes();
-
+    tick(timeChange) {
+        for(let mapItem of this.#entityMap) 
+            mapItem
     }
 
     log () {
@@ -68,6 +66,18 @@ module.exports = class {
                     yield* variable.entityMap;
                 }
         }};
+    }
+
+    #processRelationVariables() {
+        // These first two only need to be reprocessed when new 
+        // relations are set.  But I believe it's cheap enough to
+        // process.  So for the time being at least, they get
+        // processed with the rest.
+        this.#composeRelationsIntoMaster();
+        this.#extractRelationVariables();
+        this.#substituteVariableSolutions();
+        this.#substitutePropertySolutions();
+        this.#calculateFirstEscapes();
     }
 
     // Requires an array of arrow-style relations (e.g. 'x + y -> x + w')
@@ -214,8 +224,9 @@ module.exports = class {
                 firstEscape = 0;
 
             // boundaries imposed by the giving object
-            if (mapItem.remainRate) {
-                let escapeTime = prop.getFirstEscape(mapItem.remainRate);
+            if (mapItem.variable.isSource) {
+                let remainRate = `${mapItem.property.value} - ${mapItem.property.flowRate}`;
+                let escapeTime = prop.getFirstEscape(remainRate);
                 if (escapeTime < firstEscape)
                     firstEscape = escapeTime;
             }

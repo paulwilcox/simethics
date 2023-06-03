@@ -50,6 +50,8 @@ module.exports = class boundNumber {
     }
 
     setFlowRate(flowRate) {
+        if (flowRate === undefined)
+            throw 'flowRate must cannot be undefined';
         this.flowRate = flowRate;
         return this;
     }
