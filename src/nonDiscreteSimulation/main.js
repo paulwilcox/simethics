@@ -1,7 +1,5 @@
-let boundNumber = require('./boundNumber');
-let world = require('./world.js')
-
-let n = (val) => new boundNumber().setValue(val);
+let n = require('./boundNumber').n;
+let world = require('./world.js');
 
 let time = { 
     previous: null, 

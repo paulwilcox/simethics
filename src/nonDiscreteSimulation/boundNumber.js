@@ -3,24 +3,24 @@ let solver = require('./solver');
 
 module.exports = class boundNumber {
 
-    constructor() {
-        this.value = undefined;
-        this.lower = -Infinity;
-        this.upper = Infinity;
-        this.flowRate = undefined; // e.g. '5t'
-    }
-
-    getFlowResultFunc (
-        direction // '+' or '-'
-    ) {
-        return `${this.value} ${direction} ${this.flowRate}`; 
-    }
-
-    // aliases
+    // These makee usage less verbose
+    //   let n = require('./boundNumber').n;
+    //   let committment = {
+    //      sweat = n(5).l(0).u(10).f('2t'),
+    //      blood = n(2).l(0).u(8).f('3t/2')
+    //   }
+    static n = (val = 0) => new boundNumber().setValue(val);
     v(val) { this.setValue(val); return this; }
     l(val) { this.setLower(val); return this; }
     u(val) { this.setUpper(val); return this; }
     f(val) { this.setFlowRate(val); return this; }
+
+    constructor() {
+        this.value = 0;
+        this.lower = -Infinity;
+        this.upper = Infinity;
+        this.flowRate = '0t'; 
+    }
 
     setValue(val) {
         if (val < this.lower)
@@ -29,6 +29,15 @@ module.exports = class boundNumber {
             throw `Cannot set value to ${val} because upper is ${this.upper}`;
         this.value = val;
         return this;
+    }
+
+    extractValue(val) {
+        if (val < this.lower)
+            throw `Cannot extract ${val} because lower is ${this.lower}`;
+        if (val > this.upper)
+            throw `Cannot extract ${val} because upper is ${this.upper}`;
+        this.value -= val;
+        return val;
     }
 
     setLower(val) {
@@ -49,8 +58,8 @@ module.exports = class boundNumber {
         return this;
     }
 
-    setFlowRate(timeFunc) {
-        this.flowRate = timeFunc;
+    setFlowRate(flowRate) {
+        this.flowRate = flowRate;
         return this;
     }
 

@@ -21,18 +21,42 @@ module.exports = class {
         this.#extractRelationVariables();
         this.#substituteVariableSolutions();
         this.#substitutePropertySolutions();
-        this.#calculateFirstEscape();
+        this.#calculateFirstEscapes();
 
     }
 
     log () {
-        console.log(
-            fd(this.#entityMap)
-                .get(mapItem => ({ 
-                    name: mapItem.variable.name, 
-                    firstEscape: fd.round(mapItem.firstEscape, 1e-4)
-                }))
-        );
+
+        fd(this.#entityMap)
+            .map(mapItem => ({ 
+                name: mapItem.variable.name, 
+                firstEscape: fd.round(mapItem.firstEscape, 1e-4)
+            }))
+            .log(null, 'Mapped Element Escape Times');
+
+        fd(this.#entityMap)
+            .window({ 
+                // TODO: Implement min/max in fluentdata
+                reduce: { 
+                    minFirstEscape: (accum, mapItem) => mapItem.firstEscape < accum ? mapItem.firstEscape : accum,
+                    ['minFirstEscape.seed']: Infinity
+                } 
+            })
+            .filter(mapItem => 
+                mapItem.firstEscape == mapItem.minFirstEscape 
+                && mapItem.firstEscape != Infinity
+            )
+            .map(mapItem => ({ 
+                name: mapItem.variable.name, 
+                firstEscape: fd.round(mapItem.firstEscape, 1e-4),
+                minFirstEscape: mapItem.minFirstEscape
+            }))
+            .log(null, 'First element(s) to escape')
+
+        // TODO: How to handle escaped elements.  
+        // Probably a bound number setting itself.
+        // e.g.: boundNumber.flowBehaviorIfTooLow = keepToLowerBound | setToUpperBound | deletePropertyFromElement | deleteElement
+
     }
 
     // flattens the variable-level entityMaps so there is a master map
@@ -169,7 +193,7 @@ module.exports = class {
 
     // For each caught property, get the earliest positive time for which the 
     // function would result in the value of the property going out of its own boundaries 
-    #calculateFirstEscape() {
+    #calculateFirstEscapes() {
 
         for (let mapItem of this.#entityMap) {
 
