@@ -18,42 +18,88 @@ module.exports = class {
         this.#processRelationVariables();
     }
 
-    tick(timeChange) {
-        for(let mapItem of this.#entityMap) 
-            mapItem
+    tick(
+        
+        // pass null to tick until the next element escapes its bounds 
+        timeChange = null,
+        
+        // to prevent infinite loops 
+        maxSubTicks = 1000
+
+    ) {
+
+        if (maxSubTicks <= 0) 
+            throw 'maxSubTics is exauhsted';
+
+        let earliestEscapeTime = 
+            fd(this.#entityMap).reduce({ 
+                // TODO: Implement min/max in fluentdata
+                minEscape: (accum, mapItem) => mapItem.escapeTime < accum ? mapItem.escapeTime : accum,
+                ['minEscape.seed']: Infinity 
+            })
+            .get()
+            .minEscape;
+
+        timeChange = 
+            timeChange === null 
+            ? earliestEscapeTime 
+            : timeChange;
+
+        // tick the individual properties to change their values
+        for (let mappedItem of this.#entityMap)
+            mappedItem.property.tick(timeChange);
+
+        // TODO: Get the escaping element properties and manage them.
+        // Otherwise, you can't go past the first default tick!
+        // Below gets the parent elements.  Just to get started.
+        // It brings things to mind.  Namely, there may need to be
+        // a bubbling up on state change.  Maybe just the property
+        // 'dies'.  But maybe the whole element does.
+        /*
+            let escapingElements = 
+                fd(this.#entityMap)
+                .filter(mappedItem => 
+                    mappedItem.escapeTime == earliestEscapeTime
+                )
+                .get()
+            console.log(escapingProperties.length);
+        */
+        // It may be more like we send out an hasTicked event
+        // for any element to subscribe to, and then it does
+        // what it needs.  This is where (from what I recall
+        // of it) the 'objectProcessing' work makes attempts.
+        // So some sort of merge of these projects.
+
+        // to pass onto the next tick
+        let timeOverage = 
+            earliestEscapeTime < timeChange
+            ? timeChange - earliestEscapeTime
+            : 0; 
+
+        return timeOverage > 0
+            ? this.tick(timeOverage, maxSubTicks - 1)
+            : this;
+            
     }
 
+    // TODO: move this to main and then make a real log().
+    // Problem is #entityMap is private.
     log () {
 
-        fd(this.#entityMap)
-            .map(mapItem => ({ 
-                name: mapItem.variable.name, 
-                firstEscape: fd.round(mapItem.firstEscape, 1e-4)
-            }))
-            .log(null, 'Mapped Element Escape Times');
+        let rnd = (val) => fd.round(val, 1e-4);
+        let showEnts = mapItem => ({ 
+            name: mapItem.variable.name, 
+            value: rnd(mapItem.property.value),
+            escapeTime: rnd(mapItem.escapeTime)
+        });
 
         fd(this.#entityMap)
-            .window({ 
-                // TODO: Implement min/max in fluentdata
-                reduce: { 
-                    minFirstEscape: (accum, mapItem) => mapItem.firstEscape < accum ? mapItem.firstEscape : accum,
-                    ['minFirstEscape.seed']: Infinity
-                } 
-            })
-            .filter(mapItem => 
-                mapItem.firstEscape == mapItem.minFirstEscape 
-                && mapItem.firstEscape != Infinity
-            )
-            .map(mapItem => ({ 
-                name: mapItem.variable.name, 
-                firstEscape: fd.round(mapItem.firstEscape, 1e-4),
-                minFirstEscape: mapItem.minFirstEscape
-            }))
-            .log(null, 'First element(s) to escape')
+            .log(null, 'Elements before tick', showEnts);
 
-        // TODO: How to handle escaped elements.  
-        // Probably a bound number setting itself.
-        // e.g.: boundNumber.flowBehaviorIfTooLow = keepToLowerBound | setToUpperBound | deletePropertyFromElement | deleteElement
+        this.tick()
+
+        fd(this.#entityMap)
+            .log(null, 'Elements after tick', showEnts);
 
     }
 
@@ -77,7 +123,7 @@ module.exports = class {
         this.#extractRelationVariables();
         this.#substituteVariableSolutions();
         this.#substitutePropertySolutions();
-        this.#calculateFirstEscapes();
+        this.#calculateEscapeTimes();
     }
 
     // Requires an array of arrow-style relations (e.g. 'x + y -> x + w')
@@ -203,35 +249,35 @@ module.exports = class {
 
     // For each caught property, get the earliest positive time for which the 
     // function would result in the value of the property going out of its own boundaries 
-    #calculateFirstEscapes() {
+    #calculateEscapeTimes() {
 
         for (let mapItem of this.#entityMap) {
 
-            let firstEscape = null;
+            let earliestEscape = null;
             let prop = mapItem.property;
 
             // Get the earliest time that a function escapes caught prop boundaries.
             // When multiple solutions exist, eliminate any that are not applicable.
             // If it is already out of bounds at t = 0, it is not applicable.
             for (let solution of mapItem.solutions) {
-                let escapeTime = prop.getFirstEscape(solution.substituted);
-                if (escapeTime != 0 && (firstEscape == null || escapeTime < firstEscape))
-                    firstEscape = escapeTime;
+                let escapeTime = prop.getEscapeTime(solution.substituted);
+                if (escapeTime != 0 && (earliestEscape == null || escapeTime < earliestEscape))
+                    earliestEscape = escapeTime;
             }
 
             // If no first escape solutions are applicable, set the earliest escape time to 0.
-            if (firstEscape == null)
-                firstEscape = 0;
+            if (earliestEscape == null)
+                earliestEscape = 0;
 
             // boundaries imposed by the giving object
             if (mapItem.variable.isSource) {
                 let remainRate = `${mapItem.property.value} - ${mapItem.property.flowRate}`;
-                let escapeTime = prop.getFirstEscape(remainRate);
-                if (escapeTime < firstEscape)
-                    firstEscape = escapeTime;
+                let escapeTime = prop.getEscapeTime(remainRate);
+                if (escapeTime < earliestEscape)
+                    earliestEscape = escapeTime;
             }
 
-            mapItem.firstEscape = firstEscape;
+            mapItem.escapeTime = earliestEscape;
 
         }
 

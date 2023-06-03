@@ -68,7 +68,7 @@ module.exports = class boundNumber {
     // Get the earliest (current or future) time at which the 
     // timeFunction will go out of bounds with respect to 
     // boundNum's lower and upper limits. 
-    getFirstEscape (
+    getEscapeTime (
         timeFunction
     ) {
 

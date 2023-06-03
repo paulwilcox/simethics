@@ -1,12 +1,6 @@
 let n = require('./boundNumber').n;
 let world = require('./world.js');
 
-/*
-let bn = n().f('5t').u('14');
-bn.tick(3);
-console.log(bn.value)
-*/
-
 let time = { 
     previous: null, 
     current: 0, 
