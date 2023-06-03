@@ -1,5 +1,4 @@
 let solver = require('./solver');
-let variableToEntityMapItem = require('./variableToEntityMapItem');
 let solution = require('./solution');
 
 module.exports = class {
@@ -7,7 +6,7 @@ module.exports = class {
     name;
     isSource = false; // Is the variable a source in the master relation?
     isTarget = false; // Is the variable a target in the master relation?
-    entityMap = []; // What world entities actually relate to the variable (matched using entity property names)
+    boundNumbers = []; // What boundNumbers actually relate to the variable?
     solutions = []; // The merged relation solved in terms of the variable (multiple possible, usually only one)
     masterFlowRate; // The composition of all flow rates from the mapped entities
     #world;
@@ -25,11 +24,14 @@ module.exports = class {
         this.isTarget = isTarget;
 
         // populate this.entityMap
-        for (let entity of world.entities) 
-            if (entity[name] !== undefined) {
-                let mapItem = new variableToEntityMapItem (this, entity);
-                this.entityMap.push(mapItem);
-            }
+        for (let entity of world.entities) {
+            let boundNumber = entity[name]; 
+            if (boundNumber === undefined)
+                continue;
+            boundNumber.entity = entity;
+            boundNumber.variable = this; 
+            this.boundNumbers.push(boundNumber);
+        }
 
         this.solutions = solver(this.#world.masterRelation.replace('->', '='))
             .solveFor(name)
@@ -42,7 +44,7 @@ module.exports = class {
             
         this.masterFlowRate =
             '(' + 
-                this.entityMap
+                this.boundNumbers
                 .map(mapItem => `(${mapItem.flowRate})`)
                 .join('+') + 
             ')';

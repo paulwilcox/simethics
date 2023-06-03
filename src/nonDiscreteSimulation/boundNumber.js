@@ -3,6 +3,18 @@ let solver = require('./solver');
 
 module.exports = class boundNumber {
 
+    // core properties
+    value;
+    lower;
+    upper;
+    flowRate;
+
+    // mapping and workflow properties
+    variable;
+    entity;
+    solutions = [];
+    escapeTime;
+
     // These makee usage less verbose
     //   let n = require('./boundNumber').n;
     //   let committment = {

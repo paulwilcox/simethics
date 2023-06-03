@@ -4,10 +4,21 @@ let solution = require('./solution');
 
 module.exports = class {
 
-    entities;
-    relations;
     masterRelation;
+    relations;
+    entities;
     variables;
+
+    // flattens the variable-level boundNumbers so there is a master map
+    get boundNumbers () {
+        let self = this;
+        return {
+            [Symbol.iterator]: function* () {
+                for(let variable of self.variables) {
+                    yield* variable.boundNumbers;
+                }
+        }};
+    }
 
     constructor(        
         entities,
@@ -32,9 +43,9 @@ module.exports = class {
             throw 'maxSubTics is exauhsted';
 
         let earliestEscapeTime = 
-            fd(this.#entityMap).reduce({ 
+            fd(this.boundNumbers).reduce({ 
                 // TODO: Implement min/max in fluentdata
-                minEscape: (accum, mapItem) => mapItem.escapeTime < accum ? mapItem.escapeTime : accum,
+                minEscape: (accum, boundNumber) => boundNumber.escapeTime < accum ? boundNumber.escapeTime : accum,
                 ['minEscape.seed']: Infinity 
             })
             .get()
@@ -46,20 +57,20 @@ module.exports = class {
             : timeChange;
 
         // tick the individual properties to change their values
-        for (let mappedItem of this.#entityMap)
-            mappedItem.property.tick(timeChange);
+        for (let boundNumber of this.boundNumbers)
+            boundNumber.tick(timeChange);
 
         // TODO: Get the escaping element properties and manage them.
         // Otherwise, you can't go past the first default tick!
         // Below gets the parent elements.  Just to get started.
         // It brings things to mind.  Namely, there may need to be
-        // a bubbling up on state change.  Maybe just the property
+        // a bubbling up on state change.  Maybe just the boundNumber
         // 'dies'.  But maybe the whole element does.
         /*
             let escapingElements = 
-                fd(this.#entityMap)
-                .filter(mappedItem => 
-                    mappedItem.escapeTime == earliestEscapeTime
+                fd(this.boundNumbers)
+                .filter(bn => 
+                    bn.escapeTime == earliestEscapeTime
                 )
                 .get()
             console.log(escapingProperties.length);
@@ -87,31 +98,20 @@ module.exports = class {
     log () {
 
         let rnd = (val) => fd.round(val, 1e-4);
-        let showEnts = mapItem => ({ 
-            name: mapItem.variable.name, 
-            value: rnd(mapItem.property.value),
-            escapeTime: rnd(mapItem.escapeTime)
+        let showEnts = boundNumber => ({ 
+            name: boundNumber.variable.name, 
+            value: rnd(boundNumber.value),
+            escapeTime: rnd(boundNumber.escapeTime)
         });
 
-        fd(this.#entityMap)
+        fd(this.boundNumbers)
             .log(null, 'Elements before tick', showEnts);
 
         this.tick()
 
-        fd(this.#entityMap)
+        fd(this.boundNumbers)
             .log(null, 'Elements after tick', showEnts);
 
-    }
-
-    // flattens the variable-level entityMaps so there is a master map
-    get #entityMap () {
-        let self = this;
-        return {
-            [Symbol.iterator]: function* () {
-                for(let variable of self.variables) {
-                    yield* variable.entityMap;
-                }
-        }};
     }
 
     #processRelationVariables() {
@@ -122,7 +122,7 @@ module.exports = class {
         this.#composeRelationsIntoMaster();
         this.#extractRelationVariables();
         this.#substituteVariableSolutions();
-        this.#substitutePropertySolutions();
+        this.#substituteBoundNumberSolutions();
         this.#calculateEscapeTimes();
     }
 
@@ -179,7 +179,7 @@ module.exports = class {
 
     // Substitute variable-level solutions with the actual values of the 'other' variables
     // - This will replace everything on the right-hand side, preserving the left hand
-    //   variable for later parsing at the property-level.  
+    //   variable for later parsing at the boundNumber-level.  
     // - For instance: 
     //     > Algebraic: happiness = 10*(-rock+3*energy)
     //     > Turns into:   happiness = 10*(-0.5t+3*(5t+3t)) 
@@ -207,7 +207,7 @@ module.exports = class {
 
     }
 
-    // Substitute property-level solutions with the actual values of the 'current' variable
+    // Substitute boundNumber-level solutions with the actual values of the 'current' variable
     // - This will finish the job and replace the left hand side of variable-level solutions
     // - For instance:
     //     > Variable-Level: happiness = 10*(-0.5t+3*(5t+3t)) 
@@ -218,49 +218,48 @@ module.exports = class {
     //     > Variable-Level: happiness = 10*(-0.5t+3*(5t+3t)) 
     //     > Turns into:     7t = 10*(-0.5t+3*(5t+3t)) -3t
     //     > Given that:     happinessA.flowRate = 7t & happinessB.flowRate = 3t & happinessA is current
-    #substitutePropertySolutions () {
+    #substituteBoundNumberSolutions () {
 
-        for (let mapItem of this.#entityMap) {
+        for (let boundNumber of this.boundNumbers) {
 
-            let variable = mapItem.variable;
+            let variable = boundNumber.variable;
 
             let masterFlowRateFromOthers = 
                 '(' + 
-                    variable.entityMap
-                    .filter(otherMapItem => otherMapItem != mapItem)
-                    .map(otherMapItem => `(${otherMapItem.flowRate})`)
+                    variable.boundNumbers
+                    .filter(otherBoundNumber => otherBoundNumber != boundNumber)
+                    .map(otherBoundNumber => `(${otherBoundNumber.flowRate})`)
                     .join(' + ') + 
                 ')';
 
             for (let variableSolution of variable.solutions) {
-                let propertySolution = new solution();
-                propertySolution.substituted = 
+                let boundNumberSolution = new solution();
+                boundNumberSolution.substituted = 
                     variableSolution.substituted.replace(
                         new RegExp(variable.name,'g'),
-                        mapItem.flowRate
+                        boundNumber.flowRate
                     );
-                propertySolution.substituted += ' - ' + masterFlowRateFromOthers;
-                mapItem.solutions.push(propertySolution);
+                boundNumberSolution.substituted += ' - ' + masterFlowRateFromOthers;
+                boundNumber.solutions.push(boundNumberSolution);
             }
 
         }
 
     }
 
-    // For each caught property, get the earliest positive time for which the 
-    // function would result in the value of the property going out of its own boundaries 
+    // For each caught boundNumber, get the earliest positive time for which the 
+    // function would result in the value of the boundNumber going out of its own boundaries 
     #calculateEscapeTimes() {
 
-        for (let mapItem of this.#entityMap) {
+        for (let boundNumber of this.boundNumbers) {
 
             let earliestEscape = null;
-            let prop = mapItem.property;
 
             // Get the earliest time that a function escapes caught prop boundaries.
             // When multiple solutions exist, eliminate any that are not applicable.
             // If it is already out of bounds at t = 0, it is not applicable.
-            for (let solution of mapItem.solutions) {
-                let escapeTime = prop.getEscapeTime(solution.substituted);
+            for (let solution of boundNumber.solutions) {
+                let escapeTime = boundNumber.getEscapeTime(solution.substituted);
                 if (escapeTime != 0 && (earliestEscape == null || escapeTime < earliestEscape))
                     earliestEscape = escapeTime;
             }
@@ -270,14 +269,14 @@ module.exports = class {
                 earliestEscape = 0;
 
             // boundaries imposed by the giving object
-            if (mapItem.variable.isSource) {
-                let remainRate = `${mapItem.property.value} - ${mapItem.property.flowRate}`;
-                let escapeTime = prop.getEscapeTime(remainRate);
+            if (boundNumber.variable.isSource) {
+                let remainRate = `${boundNumber.value} - ${boundNumber.flowRate}`;
+                let escapeTime = boundNumber.getEscapeTime(remainRate);
                 if (escapeTime < earliestEscape)
                     earliestEscape = escapeTime;
             }
 
-            mapItem.escapeTime = earliestEscape;
+            boundNumber.escapeTime = earliestEscape;
 
         }
 
