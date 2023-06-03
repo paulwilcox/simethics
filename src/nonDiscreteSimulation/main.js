@@ -48,7 +48,13 @@ let relations = [
 //  - Instead, it just changes the first escape of happiness.  Why?
 // TODO: I don't think when we uncatch properties we kill the whole merged relation.
 //  - Perhaps we just set flow rates to 0 and reprocess? 
-new world(entities, relations).log();
+let w = new world(entities, relations)
+
+w.log('Elements before tick');
+
+w.tick()
+
+w.log(null, 'Elements after tick');
 
 
 // I think it's going to be important to better apply a '+' or '-' to 

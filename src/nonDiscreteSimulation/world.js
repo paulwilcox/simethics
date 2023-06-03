@@ -95,22 +95,20 @@ module.exports = class {
 
     // TODO: move this to main and then make a real log().
     // Problem is #entityMap is private.
-    log () {
+    log (title) {
 
         let rnd = (val) => fd.round(val, 1e-4);
-        let showEnts = boundNumber => ({ 
-            name: boundNumber.variable.name, 
-            value: rnd(boundNumber.value),
-            escapeTime: rnd(boundNumber.escapeTime)
-        });
 
         fd(this.boundNumbers)
-            .log(null, 'Elements before tick', showEnts);
-
-        this.tick()
-
-        fd(this.boundNumbers)
-            .log(null, 'Elements after tick', showEnts);
+            .log(
+                null,
+                title, 
+                boundNumber => ({ 
+                    name: boundNumber.variable.name, 
+                    value: rnd(boundNumber.value),
+                    escapeTime: rnd(boundNumber.escapeTime)
+                })
+            );
 
     }
 
