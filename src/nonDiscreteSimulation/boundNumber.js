@@ -31,15 +31,6 @@ module.exports = class boundNumber {
         return this;
     }
 
-    extractValue(val) {
-        if (val < this.lower)
-            throw `Cannot extract ${val} because lower is ${this.lower}`;
-        if (val > this.upper)
-            throw `Cannot extract ${val} because upper is ${this.upper}`;
-        this.value -= val;
-        return val;
-    }
-
     setLower(val) {
         if (val > this.upper) 
             throw `Cannot set lower to ${val} because upper is ${this.upper}`;
@@ -60,6 +51,15 @@ module.exports = class boundNumber {
 
     setFlowRate(flowRate) {
         this.flowRate = flowRate;
+        return this;
+    }
+
+    tick(timeChange) {
+        let newVal = 
+            solver(this.flowRate)
+            .evaluateToFloat({t: timeChange})
+            .get();
+        this.setValue(newVal);
         return this;
     }
 
