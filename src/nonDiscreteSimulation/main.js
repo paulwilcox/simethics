@@ -92,11 +92,14 @@ Splitting the solved-for variable into components and subtracting the other look
     newRockVal = (-7/4)*((10t)+(5t))+3*((4t)+(6t))+7*((2t)+(2t))+((2t)+(2t))^2 - ((0.5t))
 
 Time ticked should have been 2.1269 because happiness stopped it (correctly or not)
-    newRockVal = (-7/4)*((10t)+(5t))+3*((4t)+(6t))+7*((2t)+(2t))+((2t)+(2t))^2 - ((0.5t))
-    newRockVal = 138.84488276 (desmos)
+    rockValChange = (-7/4)*((10t)+(5t))+3*((4t)+(6t))+7*((2t)+(2t))+((2t)+(2t))^2 - ((0.5t))
+    rockValChange = 138.84488276 (desmos)
     hmm, simethics is showing 1.0634 for both rocks.  And they started at different values (100, 50)
-    It's really "change in rock val", not newRockVal.  So that's likely one issue.
-    but that doesn't really explain it.
+    I seem to not actually be using this though to change the rate.  I'm using boundnumber flow rate.
+    I think this isn't accounting for the larger relations (which can feed back into it)
+
+So implment the solution.  But uh-oh, there can be multiple.
+    - Pick the solution with the latest escape time.  
 
 
 
