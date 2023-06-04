@@ -59,7 +59,7 @@ console.log(result);
         return _solution;
     })*/
 
-return;
+// return;
 w.log();
 w.logSolutions();
 w.tick().log();
@@ -84,6 +84,22 @@ Solve for rock:
     
 Simethics is showing: 
   rock = (-7/4)*happiness+3*energy+7*metal+metal^2
+
+Algebraic variable substitutions (not yet doing 'rock', look good);
+Splitting the solved-for variable into components and subtracting the other looks good,
+    0.5t = (-7/4)*((10t)+(5t))+3*((4t)+(6t))+7*((2t)+(2t))+((2t)+(2t))^2 - ((0.5t))
+    Though for debug purposes it may be helpful to replace the unused left part
+    newRockVal = (-7/4)*((10t)+(5t))+3*((4t)+(6t))+7*((2t)+(2t))+((2t)+(2t))^2 - ((0.5t))
+
+Time ticked should have been 2.1269 because happiness stopped it (correctly or not)
+    newRockVal = (-7/4)*((10t)+(5t))+3*((4t)+(6t))+7*((2t)+(2t))+((2t)+(2t))^2 - ((0.5t))
+    newRockVal = 138.84488276 (desmos)
+    hmm, simethics is showing 1.0634 for both rocks.  And they started at different values (100, 50)
+    It's really "change in rock val", not newRockVal.  So that's likely one issue.
+    but that doesn't really explain it.
+
+
+
 
 */
 

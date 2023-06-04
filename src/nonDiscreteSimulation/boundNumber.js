@@ -91,11 +91,11 @@ module.exports = class boundNumber {
     tick(timeChange) {
         if (this.hasEscaped)
             throw 'Cannot tick a bound number that has escaped';
-        let newVal = 
+        let valChange = 
             solver(this.flowRate)
             .evaluateToFloat({t: timeChange})
             .get();
-        this.setValue(newVal);
+        this.setValue(this.value + valChange);
         return this;
     }
 
