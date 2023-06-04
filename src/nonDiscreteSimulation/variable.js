@@ -9,6 +9,10 @@ module.exports = class {
     boundNumbers = []; // What boundNumbers actually relate to the variable?
     solutions = []; // The merged relation solved in terms of the variable (multiple possible, usually only one)
     masterFlowRate; // The composition of all flow rates from the mapped entities
+    get inBoundNumbers () { 
+        return this.boundNumbers
+            .filter(boundNumber => !boundNumber.hasEscaped)
+        }
     #world;
 
     constructor({
@@ -44,11 +48,14 @@ module.exports = class {
             
         this.masterFlowRate =
             '(' + 
-                this.boundNumbers
+                this.inBoundNumbers
                 .map(mapItem => `(${mapItem.flowRate})`)
                 .join('+') + 
             ')';
 
+        if (this.masterFlowRate == '()')
+            this.masterFlowRate = ('(0)');
+            
     }
 
 }

@@ -14,6 +14,26 @@ module.exports = class boundNumber {
     entity;
     solutions = [];
     escapeTime;
+    // If true, will be ignored on the next tick.
+    // Different than value == lower || value == upper
+    // in that it equals one of those and would pass
+    // if time continues further.  
+    // Can be discovered via derivative at the value, 
+    // but probably much less costly to simply identify 
+    // it at time of escape.
+    hasEscaped = false;
+    // Set behavior when an element escapes.
+    // Default is to just set the hasEscaped property.
+    // But perhaps, for instance you'd like it to: 
+    //   > 'bounce' instead.  You can instead add to 
+    //     the value and set has escaped to true.
+    //   > 'empty' in advance.  You can set the value
+    //     to the lower bound, then set hasEscaped to
+    //     true.  So that it dies empty if it passes
+    //     the upper bound. 
+    onEscape = (boundNumber) => {
+        boundNumber.hasEscaped = true;
+    } 
 
     // These makee usage less verbose
     //   let n = require('./boundNumber').n;
@@ -69,6 +89,8 @@ module.exports = class boundNumber {
     }
 
     tick(timeChange) {
+        if (this.hasEscaped)
+            throw 'Cannot tick a bound number that has escaped';
         let newVal = 
             solver(this.flowRate)
             .evaluateToFloat({t: timeChange})

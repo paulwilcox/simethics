@@ -53,9 +53,13 @@ let w = new world(entities, relations)
 w.log('Elements before tick');
 
 w.tick()
+w.log('Elements after tick');
 
-w.log(null, 'Elements after tick');
+w.tick()
+w.log('Elements after tick2');
 
+w.tick()
+w.log('Elements after tick3');
 
 // I think it's going to be important to better apply a '+' or '-' to 
 // a propName.  That's may be hard if the '-' isn't right next to the

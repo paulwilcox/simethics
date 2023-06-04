@@ -20,6 +20,15 @@ module.exports = class {
         }};
     }
 
+    get inBoundNumbers () {
+        let self = this;
+        return {
+            [Symbol.iterator]: function* () {
+                for(let variable of self.variables) {
+                    yield* variable.inBoundNumbers;
+                }
+        }};
+    }
     constructor(        
         entities,
         relations // an array of directional relations (eg. 'w + x <- y + z'
@@ -43,13 +52,22 @@ module.exports = class {
             throw 'maxSubTics is exauhsted';
 
         let earliestEscapeTime = 
-            fd(this.boundNumbers).reduce({ 
-                // TODO: Implement min/max in fluentdata
-                minEscape: (accum, boundNumber) => boundNumber.escapeTime < accum ? boundNumber.escapeTime : accum,
-                ['minEscape.seed']: Infinity 
-            })
-            .get()
-            .minEscape;
+            fd(this.inBoundNumbers)
+                .filter(boundNumber => !boundNumber.hasEscaped)
+                .reduce({ 
+                    // TODO: Implement min/max in fluentdata
+                    minEscape: (accum, boundNumber) => boundNumber.escapeTime < accum ? boundNumber.escapeTime : accum,
+                    ['minEscape.seed']: Infinity 
+                })
+                .get()
+                .minEscape;
+
+        if (earliestEscapeTime <= 0) 
+            throw 'Cannot tick.  ' + 
+                'The escape time for a bound number ' + 
+                'with hasEscaped = false has a value <= 0.  ' + 
+                'Check your custom onEscape() settings and ' +
+                'ensure this is handled properly.';
 
         timeChange = 
             timeChange === null 
@@ -57,25 +75,17 @@ module.exports = class {
             : timeChange;
 
         // tick the individual properties to change their values
-        for (let boundNumber of this.boundNumbers)
+        for (let boundNumber of this.inBoundNumbers) {
             boundNumber.tick(timeChange);
+            if (boundNumber.escapeTime == earliestEscapeTime)
+                boundNumber.onEscape(boundNumber);
+        }
 
-        // TODO: Get the escaping element properties and manage them.
-        // Otherwise, you can't go past the first default tick!
-        // Below gets the parent elements.  Just to get started.
-        // It brings things to mind.  Namely, there may need to be
-        // a bubbling up on state change.  Maybe just the boundNumber
-        // 'dies'.  But maybe the whole element does.
-        /*
-            let escapingElements = 
-                fd(this.boundNumbers)
-                .filter(bn => 
-                    bn.escapeTime == earliestEscapeTime
-                )
-                .get()
-            console.log(escapingProperties.length);
-        */
-        // It may be more like we send out an hasTicked event
+        this.#processRelationVariables();
+
+        // TODO: Other things may depend on each other after
+        // changes in values.
+        // It may be like we send out a hasTicked event
         // for any element to subscribe to, and then it does
         // what it needs.  This is where (from what I recall
         // of it) the 'objectProcessing' work makes attempts.
@@ -106,7 +116,8 @@ module.exports = class {
                 boundNumber => ({ 
                     name: boundNumber.variable.name, 
                     value: rnd(boundNumber.value),
-                    escapeTime: rnd(boundNumber.escapeTime)
+                    escapeTime: rnd(boundNumber.escapeTime),
+                    hasEscaped: boundNumber.hasEscaped
                 })
             );
 
@@ -218,14 +229,17 @@ module.exports = class {
     //     > Given that:     happinessA.flowRate = 7t & happinessB.flowRate = 3t & happinessA is current
     #substituteBoundNumberSolutions () {
 
-        for (let boundNumber of this.boundNumbers) {
+        for (let boundNumber of this.inBoundNumbers) {
 
             let variable = boundNumber.variable;
 
             let masterFlowRateFromOthers = 
                 '(' + 
-                    variable.boundNumbers
-                    .filter(otherBoundNumber => otherBoundNumber != boundNumber)
+                    variable.inBoundNumbers
+                    .filter(otherBoundNumber => 
+                        otherBoundNumber != boundNumber
+                        && !otherBoundNumber.hasEscaped 
+                    )
                     .map(otherBoundNumber => `(${otherBoundNumber.flowRate})`)
                     .join(' + ') + 
                 ')';
@@ -237,7 +251,8 @@ module.exports = class {
                         new RegExp(variable.name,'g'),
                         boundNumber.flowRate
                     );
-                boundNumberSolution.substituted += ' - ' + masterFlowRateFromOthers;
+                if (masterFlowRateFromOthers != '()')
+                    boundNumberSolution.substituted += ' - ' + masterFlowRateFromOthers;
                 boundNumber.solutions.push(boundNumberSolution);
             }
 
@@ -249,7 +264,7 @@ module.exports = class {
     // function would result in the value of the boundNumber going out of its own boundaries 
     #calculateEscapeTimes() {
 
-        for (let boundNumber of this.boundNumbers) {
+        for (let boundNumber of this.inBoundNumbers) {
 
             let earliestEscape = null;
 
