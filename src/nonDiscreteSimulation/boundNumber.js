@@ -159,9 +159,9 @@ function getEscapeTimesForFiniteBoundary (
 
     for (let solvedForT of solvedForTs) {
         
-        solvedForT = solver.fromNerdamerObj(solvedForT);
-        let t = solvedForT.evaluateToFloat(solvedForT).get();
-        let derivative = solvedForT.evaluateToFloat(differential, {t}).get();
+        let _solvedForT = solver.fromNerdamerObj(solvedForT);
+        let t = _solvedForT.evaluateToFloat(solvedForT).get();
+        let derivative = _solvedForT.evaluateToFloat(differential, {t}).get();
         
         if (derivative === undefined)
             continue;

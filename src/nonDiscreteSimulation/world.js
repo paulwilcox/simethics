@@ -103,8 +103,6 @@ module.exports = class {
             
     }
 
-    // TODO: move this to main and then make a real log().
-    // Problem is #entityMap is private.
     log (title) {
 
         let rnd = (val) => fd.round(val, 1e-4);
@@ -116,10 +114,46 @@ module.exports = class {
                 boundNumber => ({ 
                     name: boundNumber.variable.name, 
                     value: rnd(boundNumber.value),
+                    upperBound: boundNumber.upperBound,
                     escapeTime: rnd(boundNumber.escapeTime),
                     hasEscaped: boundNumber.hasEscaped
                 })
             );
+
+    }
+
+    // this helps track the solution subtitution process
+    logSolutions() {
+
+        let bnLogs = [];
+        for(let bn of this.boundNumbers)
+        for(let sol of bn.solutions) 
+            bnLogs.push({
+                bnSol: sol.substituted,
+                varName: bn.variable.name,
+                varSolAlg: sol.parent.algebraic,
+                varSolSub: sol.parent.substituted
+            });
+        let varsReGrouped = 
+            fd(bnLogs)
+            .group(bnLog => bnLog.varName)
+            .group(bnLog => bnLog.varSolAlg)
+            .get()
+        
+        console.log('')
+        console.log('Master Relation:')
+        console.log('  ' + this.masterRelation);
+        console.log('');
+        for(let varSols of varsReGrouped) {
+            console.log('Variable: ' + varSols[0][0].varName);
+            for(let bnSols of varSols) {
+                console.log('  - algebraic: ' + bnSols[0].varSolAlg)
+                console.log('  - substituted: ' + bnSols[0].varSolSub)
+                for(let row of bnSols) {
+                    console.log('      > ' + row.bnSol)
+                }
+            }
+        }
 
     }
 
@@ -246,6 +280,7 @@ module.exports = class {
 
             for (let variableSolution of variable.solutions) {
                 let boundNumberSolution = new solution();
+                boundNumberSolution.parent = variableSolution;
                 boundNumberSolution.substituted = 
                     variableSolution.substituted.replace(
                         new RegExp(variable.name,'g'),

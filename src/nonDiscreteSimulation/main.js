@@ -1,5 +1,6 @@
 let n = require('./boundNumber').n;
 let world = require('./world.js');
+let fd = require('fluent-data');
 
 let time = { 
     previous: null, 
@@ -21,12 +22,12 @@ let entities = [
     { 
         name: 'Ariceli', 
         happiness: n(0).l(-100).u(100).f('10t'), 
-        energy: n(20).l(0).u(100).f('5t') 
+        energy: n(20).l(0).u(96).f('4t') 
     },
     { 
         name: 'Aaron', 
-        happiness: n(0).l(-100).u(100).f('5t'), 
-        energy: n(35).l(0).u(100).f('5t') 
+        happiness: n(0).l(-100).u(97).f('5t'), 
+        energy: n(35).l(0).u(98).f('6t') 
     }, 
 
     { name: 'dummy2' }
@@ -39,64 +40,38 @@ let relations = [
     '1.5*rock <- 7*metal + energy' 
 ]
 
-// TODO: Uncatch some properties.  
-//  - For each variable, uncatch any properties with a firstEscape = 0.
-//  - If any variable no longer has caught properties, the whole merged relation cannot be activated.
-//  - Else, find the global firstEscape, use that as the time to move forward.
-//  - Start focusing on how to move forward by transferring value between properties.
-// TODO: Different values and constraints on metal cannot force a firstEscape <> infinity.  
-//  - Instead, it just changes the first escape of happiness.  Why?
-// TODO: I don't think when we uncatch properties we kill the whole merged relation.
-//  - Perhaps we just set flow rates to 0 and reprocess? 
 let w = new world(entities, relations)
 
-w.log('Elements before tick');
+w.log();
+w.logSolutions();
+w.tick().log();
 
-w.tick()
-w.log('Elements after tick');
+/*
 
-w.tick()
-w.log('Elements after tick2');
+TODO:
 
-w.tick()
-w.log('Elements after tick3');
+Mater relation:
 
-// I think it's going to be important to better apply a '+' or '-' to 
-// a propName.  That's may be hard if the '-' isn't right next to the
-// variable name.  So we may have to require the negative be right next
-// to the variable or a special relation name be used to identify 
-// deposit or extraction.  So '3(-x)' or '3ext(x)' instead of just '-3x'.
-//
-// But the pure math may work itself out.  
-// -2x = y
-// x = -y/2
-// If y is positive, x would be negative, and so you would extract from x
-//
-// Pausing on the above note and focus on getting time funcs.  Just 
-// assume extraction of sources and deposits into targets.
+  ( metal^2 + 2*energy) + ( 0.5*rock) + ( 7*metal + energy) -> (2*happiness ) + (-0.25*happiness ) + (1.5*rock )
+  ( metal^2 + 2*energy) + ( 0.5*rock) + ( 7*metal + energy) = (2*happiness ) + (-0.25*happiness ) + (1.5*rock )
 
-// How am I going to resolve things when there are multiple funcs?  I
-// don't wan't to do a queue, because that will make it order dependent.
-// I think some sort of composition is necessary.  
-//
-// But I think the composition will be simple.  Add up all the sources
-// for the sources.  On the other side, add up all the targets.
-//
-// relation1 = '2*happiness <- metal^2 + 2*energy'
-// relation2 = '7*widgets <- knowledge^2 + 3*tools
-// composite = 2*happiness + 7*widgets <- metal^2 + 2*energy + knowledge^2 + 3*tools
-//
-// One concern is that more complex equations may be too sensitive for the solver.
-// Possible that inTermsOf's can be additively composed as well, but I"m not sure
+Solve for rock:
+  ( 0.5*rock) - (1.5*rock )  = (2*happiness ) + (-0.25*happiness ) - ( metal^2 + 2*energy) - ( 7*metal + energy) 
+  -(1.5*rock)                = 1.75*happiness - metal^2 - 2*energy - 7*metal - energy
+  -(1.5*rock)                = 1.75*happiness - metal^2 - 3*energy - 7*metal 
+  -(3/2)*rock                = (7/4)*happiness - metal^2 - 3*energy - 7*metal 
+  (3/2)*rock                = -(7/4)*happiness + metal^2 + 3*energy + 7*metal 
+  (3/2)*rock                = -(7/4)*happiness + 3*energy + 7*metal + metal^2
+
+But simethics is showing: 
+  rock = (-7/4)*happiness+3*energy+7*metal+metal^2
+
+So seems my process is failing to divide by 3/2.
+
+*/
+
 
 /************************************************************************************************************* */
-
-// TODO: find min escape time of all caughts.
-// Increment t by that time.
-// Then find out how to make appropriate withdrawals and deposits.
-//console.log(wfp.func);
-//console.log([...wfp.caughts].map(c => c.firstEscape));
-
 
 /*
 
