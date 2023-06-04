@@ -1,6 +1,8 @@
 let n = require('./boundNumber').n;
 let world = require('./world.js');
 let fd = require('fluent-data');
+let solver = require('./solver');
+let solution = require('./solution');
 
 let time = { 
     previous: null, 
@@ -42,6 +44,22 @@ let relations = [
 
 let w = new world(entities, relations)
 
+let result = 
+    solver(w.masterRelation.replace('->', '='))
+    .solveFor('rock')
+    .get()
+
+console.log(w.masterRelation.replace('->', '='));
+console.log(result);
+
+    /*
+    .map(f => {
+        let _solution = new solution(); 
+        _solution.algebraic = `${name} = ${f}`;
+        return _solution;
+    })*/
+
+return;
 w.log();
 w.logSolutions();
 w.tick().log();
@@ -52,21 +70,20 @@ TODO:
 
 Mater relation:
 
-  ( metal^2 + 2*energy) + ( 0.5*rock) + ( 7*metal + energy) -> (2*happiness ) + (-0.25*happiness ) + (1.5*rock )
-  ( metal^2 + 2*energy) + ( 0.5*rock) + ( 7*metal + energy) = (2*happiness ) + (-0.25*happiness ) + (1.5*rock )
+    ( metal^2 + 2*energy) + ( 0.5*rock) + ( 7*metal + energy) -> (2*happiness ) + (-0.25*happiness ) + (1.5*rock )
+    ( metal^2 + 2*energy) + ( 0.5*rock) + ( 7*metal + energy) = (2*happiness ) + (-0.25*happiness ) + (1.5*rock )
 
 Solve for rock:
-  ( 0.5*rock) - (1.5*rock )  = (2*happiness ) + (-0.25*happiness ) - ( metal^2 + 2*energy) - ( 7*metal + energy) 
-  -(1.5*rock)                = 1.75*happiness - metal^2 - 2*energy - 7*metal - energy
-  -(1.5*rock)                = 1.75*happiness - metal^2 - 3*energy - 7*metal 
-  -(3/2)*rock                = (7/4)*happiness - metal^2 - 3*energy - 7*metal 
-  (3/2)*rock                = -(7/4)*happiness + metal^2 + 3*energy + 7*metal 
-  (3/2)*rock                = -(7/4)*happiness + 3*energy + 7*metal + metal^2
-
-But simethics is showing: 
+    ( metal^2 + 2*energy) + ( 7*metal + energy) = (2*happiness ) + (-0.25*happiness ) + rock
+    ( metal^2 + 2*energy) + ( 7*metal + energy) = (7/4)*happiness + rock
+    metal^2 + 2*energy + 7*metal + energy = (7/4)*happiness + rock
+    metal^2 + 3*energy + 7*metal = (7/4)*happiness + rock
+    3*energy + 7*metal + metal^2 = (7/4)*happiness + rock
+    -(7/4)*happiness+3*energy + 7*metal + metal^2 = rock
+    rock = -(7/4)*happiness+3*energy + 7*metal + metal^2
+    
+Simethics is showing: 
   rock = (-7/4)*happiness+3*energy+7*metal+metal^2
-
-So seems my process is failing to divide by 3/2.
 
 */
 
