@@ -1,6 +1,7 @@
 let fd = require('fluent-data');
 let variable = require('./variable');
-let solution = require('./solution');
+let variableSolution = require('./variableSolution');
+let boundNumberSolution = require('./boundNumberSolution');
 
 module.exports = class {
 
@@ -125,32 +126,19 @@ module.exports = class {
     // this helps track the solution subtitution process
     logSolutions() {
 
-        let bnLogs = [];
-        for(let bn of this.boundNumbers)
-        for(let sol of bn.solutions) 
-            bnLogs.push({
-                bnSol: sol.substituted,
-                varName: bn.variable.name,
-                varSolAlg: sol.parent.algebraic,
-                varSolSub: sol.parent.substituted
-            });
-        let varsReGrouped = 
-            fd(bnLogs)
-            .group(bnLog => bnLog.varName)
-            .group(bnLog => bnLog.varSolAlg)
-            .get()
-        
         console.log('')
         console.log('Master Relation:')
         console.log('  ' + this.masterRelation);
+        
         console.log('');
-        for(let varSols of varsReGrouped) {
-            console.log('Variable: ' + varSols[0][0].varName);
-            for(let bnSols of varSols) {
-                console.log('  - algebraic: ' + bnSols[0].varSolAlg)
-                console.log('  - substituted: ' + bnSols[0].varSolSub)
-                for(let row of bnSols) {
-                    console.log('      > ' + row.bnSol)
+        for (let variable of this.variables) {
+            console.log('Variable: ' + variable.name);
+            for (let varSol of variable.variableSolutions) {
+                console.log('  - algebraic: ' + varSol.algebraic); 
+                console.log('  - substituted: ' + varSol.substituted); 
+                for (let bnSol of varSol.boundNumberSolutions) {
+                    console.log('      > ' + bnSol.value)
+                    console.log('          escapeTime: ' + bnSol.escapeTime)
                 }
             }
         }
@@ -232,15 +220,15 @@ module.exports = class {
     #substituteVariableSolutions () {
 
         for(let variable of this.variables)
-        for(let solution of variable.solutions) {
+        for(let variableSolution of variable.variableSolutions) {
 
-            solution.substituted = solution.algebraic;
+            variableSolution.substituted = variableSolution.algebraic;
 
             for(let otherVariable of this.variables) {
                 if (variable.name === otherVariable.name)
                     continue;
-                solution.substituted = 
-                    solution.substituted.replace(
+                variableSolution.substituted = 
+                    variableSolution.substituted.replace(
                         new RegExp(otherVariable.name,'g'),
                         otherVariable.masterFlowRate
                     ); 
@@ -250,16 +238,10 @@ module.exports = class {
 
     }
 
-    // Substitute boundNumber-level solutions with the actual values of the 'current' variable
-    // - This will finish the job and replace the left hand side of variable-level solutions
+    // Take the boundNumber-level solutions and subtract the flowrates of others of the same type
     // - For instance:
     //     > Variable-Level: happiness = 10*(-0.5t+3*(5t+3t)) 
-    //     > Turns into:     10t = 10*(-0.5t+3*(5t+3t)) 
-    //     > Given that:     happiness.flowRate = 10t & there is only 1 happiness entity
-    // - If there are other happiness entities, the others get subtracted.  
-    // - For instance:
-    //     > Variable-Level: happiness = 10*(-0.5t+3*(5t+3t)) 
-    //     > Turns into:     7t = 10*(-0.5t+3*(5t+3t)) -3t
+    //     > Turns into:     bnCangeInValue = 10*(-0.5t+3*(5t+3t)) -3t
     //     > Given that:     happinessA.flowRate = 7t & happinessB.flowRate = 3t & happinessA is current
     #substituteBoundNumberSolutions () {
 
@@ -278,53 +260,47 @@ module.exports = class {
                     .join(' + ') + 
                 ')';
 
-            for (let variableSolution of variable.solutions) {
-                let boundNumberSolution = new solution();
-                boundNumberSolution.parent = variableSolution;
-                boundNumberSolution.substituted = 
+            for (let variableSolution of variable.variableSolutions) {
+                
+                let solution = new boundNumberSolution();
+                solution.variableSolution = variableSolution;
+                variableSolution.boundNumberSolutions.push(solution);
+
+                solution.value = 
                     variableSolution.substituted.replace(
                         new RegExp(variable.name,'g'),
-                        boundNumber.flowRate
+                        'bnCangeInValue'
                     );
+
                 if (masterFlowRateFromOthers != '()')
-                    boundNumberSolution.substituted += ' - ' + masterFlowRateFromOthers;
-                boundNumber.solutions.push(boundNumberSolution);
+                    solution.value += ' - ' + masterFlowRateFromOthers;
+
+                boundNumber.boundNumberSolutions.push(solution);
+
             }
 
         }
 
     }
 
-    // For each caught boundNumber, get the earliest positive time for which the 
+    // For each caught boundNumber, get the latest positive time for which the 
     // function would result in the value of the boundNumber going out of its own boundaries 
     #calculateEscapeTimes() {
 
         for (let boundNumber of this.inBoundNumbers) {
 
-            let earliestEscape = null;
-
+            let latestEscapeTime = 0;
+            
             // Get the earliest time that a function escapes caught prop boundaries.
-            // When multiple solutions exist, eliminate any that are not applicable.
-            // If it is already out of bounds at t = 0, it is not applicable.
-            for (let solution of boundNumber.solutions) {
-                let escapeTime = boundNumber.getEscapeTime(solution.substituted);
-                if (escapeTime != 0 && (earliestEscape == null || escapeTime < earliestEscape))
-                    earliestEscape = escapeTime;
+            // When multiple solutions exist, get the one that takes the longest to escape. 
+            for (let solution of boundNumber.boundNumberSolutions) {
+                let escapeTime = boundNumber.getEscapeTime(solution.value);
+                solution.escapeTime = escapeTime;
+                if (escapeTime > latestEscapeTime)
+                    latestEscapeTime = escapeTime;
             }
 
-            // If no first escape solutions are applicable, set the earliest escape time to 0.
-            if (earliestEscape == null)
-                earliestEscape = 0;
-
-            // boundaries imposed by the giving object
-            if (boundNumber.variable.isSource) {
-                let remainRate = `${boundNumber.value} - ${boundNumber.flowRate}`;
-                let escapeTime = boundNumber.getEscapeTime(remainRate);
-                if (escapeTime < earliestEscape)
-                    earliestEscape = escapeTime;
-            }
-
-            boundNumber.escapeTime = earliestEscape;
+            boundNumber.escapeTime = latestEscapeTime;
 
         }
 

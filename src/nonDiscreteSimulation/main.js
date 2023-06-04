@@ -2,7 +2,7 @@ let n = require('./boundNumber').n;
 let world = require('./world.js');
 let fd = require('fluent-data');
 let solver = require('./solver');
-let solution = require('./solution');
+let solution = require('./variableSolution');
 
 let time = { 
     previous: null, 
@@ -100,6 +100,7 @@ Time ticked should have been 2.1269 because happiness stopped it (correctly or n
 
 So implment the solution.  But uh-oh, there can be multiple.
     - Pick the solution with the latest escape time.  
+Also, I don't think I'm properly using isSource and isTarget
 
 
 

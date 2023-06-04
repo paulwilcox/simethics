@@ -12,7 +12,7 @@ module.exports = class boundNumber {
     // mapping and workflow properties
     variable;
     entity;
-    solutions = [];
+    boundNumberSolutions = [];
     escapeTime;
     // If true, will be ignored on the next tick.
     // Different than value == lower || value == upper
@@ -113,24 +113,10 @@ module.exports = class boundNumber {
         if (t0val < this.lower) return 0;
         if (t0val > this.upper) return 0;
 
-        // if boundNum boundary makes all possible values out of bounds, 
-        // return '0' to indicate that you can't make use of the equation
-        // even a little bit.  Yes, infinite boundNum values might work but
-        // unless I see a reason to support these, I'm ignoring them.
-        if (this.lower === Infinity || this.upper === -Infinity)
-            return 0;
-
-        // Allow escape times function to work with infinite boundaries
-        let _getEscapeTimesForBoundary = (boundary, boundaryType) => 
-                boundary == undefined ? [] // there is no boundary, all values would work
-            : !isFinite(boundary) ? [] // basically there is no boundary
-            : getEscapeTimesForFiniteBoundary(timeFunction, boundary, boundaryType);
-
         // Get all times that timeFunction crosses the lower and upper boundaries
         let escapeTimes = [
-            ..._getEscapeTimesForBoundary(this.lower, 'lower'),
-            ..._getEscapeTimesForBoundary(this.upper, 'upper'),
-            Infinity 
+            ...this.#getEscapeTimesForBoundary(timeFunction, this.lower, 'lower'),
+            ...this.#getEscapeTimesForBoundary(timeFunction, this.upper, 'upper')
         ];
 
         return fd(escapeTimes)
@@ -141,44 +127,72 @@ module.exports = class boundNumber {
 
     }
 
-}
+    // Gets the time-values at which a time-based function touches the upper or 
+    // lower boundary (as appropriate) of a boundNum.  Then, if this touch 
+    // represents a move to escape a boundary, it outputs the time value.
+    #getEscapeTimesForBoundary (
+        timeFunction, // the time (t) based function (will be parsed to only include right side)
+        boundary, // the constraint value
+        boundaryType // 'lower' or 'upper'
+    ) {
 
-// Gets the time-values at which a time-based function touches the upper or 
-// lower boundary (as appropriate) of a boundNum.  Then, if this touch 
-// represents a move to escape a boundary, it outputs the time value.
-function getEscapeTimesForFiniteBoundary (
-    timeFunction, // the time (t) based function (will be parsed to only include right side)
-    boundary, // the constraint value
-    boundaryType // 'lower' or 'upper'
-) {
+// TODO: energy has both a lower and an upper, 
+// and a raw flow rate that goes positive with time.  
+// So why does it not have finite escape times?
+// And why is 't' below always evaluating to negative?
+if(boundary == 96) // eneregy, upper (shouldn't be infinity)
+    console.log('debugging here');
 
-    let timeExpression = timeFunction.replace(/^.+=/, ''); 
-    let differential = solver(`diff( ${timeExpression}, t )`);
-    let solvedForTs = solver(`${timeExpression} = ${boundary}`).solveFor('t').get();
-    let escapeTimes = [];
+        let escapeTimes = [];
 
-    for (let solvedForT of solvedForTs) {
-        
-        let _solvedForT = solver.fromNerdamerObj(solvedForT);
-        let t = _solvedForT.evaluateToFloat(solvedForT).get();
-        let derivative = _solvedForT.evaluateToFloat(differential, {t}).get();
-        
-        if (derivative === undefined)
-            continue;
-        
-        // When t touches the boundary, is it really escaping the bounds?
-        // Or is it just touching or entering?
-        let isEscape = 
-            boundaryType == 'lower' 
-            ? derivative < 0 
-            : derivative > 0; 
-        
-        if (isEscape)
-            escapeTimes.push(t);
+        // Infinite boundaries close possibilites.  Return early.
+        if (!isFinite(boundary)) {
+            let escapeTime =
+                boundary == undefined ? Infinity // it will never escape if there is no boundary
+                : boundaryType == 'lower' && boundary == -Infinity ? Infinity // it will always be inbounds
+                : boundaryType == 'upper' && boundary == Infinity ? Infinity // it will always be inbounds
+                : boundaryType == 'lower' && boundary == Infinity ? 0 // it will never be in bounds
+                : boundaryType == 'upper' && boundary == -Infinity ? 0 // it will never be in bounds
+                : null
+            if (escapeTime == null)
+                throw 'unexpected escape time with infinite boundary';
+            escapeTimes.push(escapeTime);
+            return escapeTimes;
+        }
+
+        let timeExpression = timeFunction.replace(/^.+=/, ''); 
+        let differential = solver(`diff( ${timeExpression}, t )`);
+        let solvedForTs = solver(`${timeExpression} = ${boundary}`).solveFor('t').get();
+
+        for (let solvedForT of solvedForTs) {
+            
+            let _solvedForT = solver.fromNerdamerObj(solvedForT);
+            let t = _solvedForT.evaluateToFloat(solvedForT).get();
+            let derivative = _solvedForT.evaluateToFloat(differential, {t}).get();
+            
+            if (derivative === undefined)
+                continue;
+            
+            // When t touches the boundary, is it really escaping the bounds?
+            // Or is it just touching or entering?
+            let isEscape = 
+                boundaryType == 'lower' 
+                ? derivative < 0 
+                : derivative > 0; 
+            
+            if (isEscape)
+                escapeTimes.push(t);
+
+        }
+
+        if (escapeTimes.length == 0)
+            escapeTimes.push(Infinity); // it will never escape
+
+        return escapeTimes;
 
     }
 
-    return escapeTimes;
 
 }
+
 

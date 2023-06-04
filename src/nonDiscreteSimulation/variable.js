@@ -1,5 +1,5 @@
 let solver = require('./solver');
-let solution = require('./solution');
+let variableSolution = require('./variableSolution');
 
 module.exports = class {
 
@@ -7,7 +7,7 @@ module.exports = class {
     isSource = false; // Is the variable a source in the master relation?
     isTarget = false; // Is the variable a target in the master relation?
     boundNumbers = []; // What boundNumbers actually relate to the variable?
-    solutions = []; // The merged relation solved in terms of the variable (multiple possible, usually only one)
+    variableSolutions = []; // The merged relation solved in terms of the variable (multiple possible, usually only one)
     masterFlowRate; // The composition of all flow rates from the mapped entities
     get inBoundNumbers () { 
         return this.boundNumbers
@@ -37,12 +37,18 @@ module.exports = class {
             this.boundNumbers.push(boundNumber);
         }
 
-        this.solutions = solver(this.#world.masterRelation.replace('->', '='))
+        this.variableSolutions = 
+            solver(
+                // Convert sources -> targets into -(sources) = targets.
+                // This is because sources get deducted from, targets get added to
+                '-(' + this.#world.masterRelation.replace('->', ') = ')
+            )
             .solveFor(name)
             .get()
             .map(f => {
-                let _solution = new solution(); 
+                let _solution = new variableSolution(); 
                 _solution.algebraic = `${name} = ${f}`;
+                _solution.variable = this;
                 return _solution;
             })
             
