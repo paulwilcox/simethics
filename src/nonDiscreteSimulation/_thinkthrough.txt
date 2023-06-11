@@ -1,0 +1,94 @@
+Constraints
+  : g, y, b between 0 and 10
+  : g, y, b transfer at 1t (loose 1 unit if source, gain if target)
+  : at t0, g = 0, y = 1, b = 2
+  : g <- y + b
+
+First escape
+  : g tops out at t = 10
+  : y bottoms out at t = 1
+      :: yEnd = yStart - t, yEnd = 0 (bottom limit) 
+      :: 0 = yStart - t 
+      :: 0 = 1 - t 
+      :: t = 1
+      :: yEnd = 0 at t = 1
+  : b bottoms out at t = 2
+  : so transfer would stop at t = 1
+
+At t = 1:
+  : g can go up 1 unit
+  : y, b can loose 1 unit
+  : This is not an equation though.  It's a different kind of instruction
+  : So converting to g = -(y + b), the latter negation representing loss in source means gain in target, was a mistake
+  : Rather, just follow the flow constraints:
+      :: g = 1t = 1
+      :: y = -1t = -1
+      :: b = -1t = -1
+  : And these represent transfers, so at t1
+      :: g = 1
+      :: y = 0
+      :: b = 1
+
+-----------------------------------------------------------------------
+
+Now, back to t0, same constraints, except:
+  : g + y <- y + b
+  : the relevant part is y <- y
+  : The y's cancel out, pretty much saying y is independent (or like an unconsumed catalyst/trigger)
+  : yFlowIn + yFlowOut = t - t = 0, so there is no flow
+  : yEnd = yStart - 0, yEnd = 0, which has no solution.  
+  : It never escapes (bottom-wise, but also wouldn't top-wise), and this is perfectly reasonable
+
+-----------------------------------------------------------------------
+
+2y <- y 
+
+yEnd = 2*yFlow + yStart
+yEnd = 2*t + yStart
+-2*t = yStart - yEnd
+t = (yStart - yEnd)/-2
+t = (-yStart + yEnd)/2
+t = (yEnd - yStart)/2
+t = (yEnd - 1)/2
+Solve for t where 
+  : yEnd = 0, so -1/2, less than 0 doesn't make sense, so no escape at bottom, makes sense as y is growing
+  : yEnd = 10, so 4.5.  Makes sense as yEnd = 2*yFlow + yStart: yEnd = 2*t + 1; yEnd = 2*4.5 + 1; yEnd = 9 + 1; yEnd = 10
+  : y escapes at t = 4.5
+
+-----------------------------------------------------------------------
+
+0.5y <- y
+
+yEnd = 0.5*yFlow + yStart
+yEnd = 0.5*t + 1
+-0.5t = 1 - yEnd
+0.5t = -1 + yEnd
+0.5t = yEnd - 1
+t = (yEnd - 1)*2
+t = 2*yEnd - 2
+Solve for t where
+  : yEnd = 0: t = 0 - 2, so -2, less than 0 so doesn't make sense, no escape from bottom
+  : yEnd = 10: t = 2*10 - 2, so 18. 
+      :: 0.5*yFlow + yStart = 0.5*t + 1 = 0.5*18 + 1 = 9 + 1 = 10.
+      :: Seems wrong.  
+
+Let's think about just moving t by 1
+loosing 1 y results in 0.5y
+
+Maybe it's more like
+  : yEnd = 0.5*yFlow + (yStart - yFlow)
+  : yEnd = 0.5t + 1 - t
+  : t - 0.5t = 1 - yEnd
+  : t(1 - 0.5) = 1 - yEnd
+  : t = 2(1 - yEnd)
+  : t = 2 - 2*yEnd
+  : Solve for:
+      - yEnd = 0: t = 2: Makes sense.  Every tick results in net reduction of 0.5.  Y starts at 1, so two unit ticks to reach 0
+      - yEnd = 10: t = -18: Discard because we're only going forward in time.
+
+ 
+-----------------------------------------------------------------------
+
+
+g <- y*b: what does this represent and is it workable in this transfer logic?
+

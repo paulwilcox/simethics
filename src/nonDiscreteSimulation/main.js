@@ -16,6 +16,7 @@ let time = {
     }
 };
 
+/*
 let entities = [
 
     { metal: n(50).l(0).f('2t'), rock: n(100).l(0).f('0.5t') },
@@ -40,26 +41,21 @@ let relations = [
     '2*happiness <- metal^2 + 2*energy',
     '-0.25*happiness <- 0.5*rock',
     '1.5*rock <- 7*metal + energy' 
+]*/
+
+let entities = [
+    { 
+        green: n(0).l(0).u(10).f('t'), 
+        yellow: n(1).l(0).f('t'), 
+        blue: n(2).l(0).f('t')
+    }
+];
+let relations = [
+    'green <- yellow + blue'
 ]
 
 let w = new world(entities, relations)
 
-let result = 
-    solver(w.masterRelation.replace('->', '='))
-    .solveFor('rock')
-    .get()
-
-console.log(w.masterRelation.replace('->', '='));
-console.log(result);
-
-    /*
-    .map(f => {
-        let _solution = new solution(); 
-        _solution.algebraic = `${name} = ${f}`;
-        return _solution;
-    })*/
-
-// return;
 w.log();
 w.logSolutions();
 w.tick().log();
