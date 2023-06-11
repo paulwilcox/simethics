@@ -38,57 +38,79 @@ Now, back to t0, same constraints, except:
   : yFlowIn + yFlowOut = t - t = 0, so there is no flow
   : yEnd = yStart - 0, yEnd = 0, which has no solution.  
   : It never escapes (bottom-wise, but also wouldn't top-wise), and this is perfectly reasonable
+  : IMPORTANT: notice that in analyzing y, we don't need to reference g or b
 
 -----------------------------------------------------------------------
 
 2y <- y 
-
-yEnd = 2*yFlow + yStart
-yEnd = 2*t + yStart
--2*t = yStart - yEnd
-t = (yStart - yEnd)/-2
-t = (-yStart + yEnd)/2
-t = (yEnd - yStart)/2
-t = (yEnd - 1)/2
-Solve for t where 
-  : yEnd = 0, so -1/2, less than 0 doesn't make sense, so no escape at bottom, makes sense as y is growing
-  : yEnd = 10, so 4.5.  Makes sense as yEnd = 2*yFlow + yStart: yEnd = 2*t + 1; yEnd = 2*4.5 + 1; yEnd = 9 + 1; yEnd = 10
-  : y escapes at t = 4.5
+  : yEnd = 2*yFlow + (yStart - yFlow)
+  : yEnd = 2*t + 1 - t
+  : yEnd = t + 1
+  : yEnd - 1 = t
+  : t = yEnd - 1
+  : Solve for
+      yEnd = 0: t = -1, negative so discard
+      yEnd = 10: t = 9, we start y = 1, every tick nets an extra 1, so yes, 9 ticks gets us to 10
 
 -----------------------------------------------------------------------
 
 0.5y <- y
-
-yEnd = 0.5*yFlow + yStart
-yEnd = 0.5*t + 1
--0.5t = 1 - yEnd
-0.5t = -1 + yEnd
-0.5t = yEnd - 1
-t = (yEnd - 1)*2
-t = 2*yEnd - 2
-Solve for t where
-  : yEnd = 0: t = 0 - 2, so -2, less than 0 so doesn't make sense, no escape from bottom
-  : yEnd = 10: t = 2*10 - 2, so 18. 
-      :: 0.5*yFlow + yStart = 0.5*t + 1 = 0.5*18 + 1 = 9 + 1 = 10.
-      :: Seems wrong.  
-
-Let's think about just moving t by 1
-loosing 1 y results in 0.5y
-
-Maybe it's more like
   : yEnd = 0.5*yFlow + (yStart - yFlow)
   : yEnd = 0.5t + 1 - t
   : t - 0.5t = 1 - yEnd
   : t(1 - 0.5) = 1 - yEnd
   : t = 2(1 - yEnd)
   : t = 2 - 2*yEnd
-  : Solve for:
-      - yEnd = 0: t = 2: Makes sense.  Every tick results in net reduction of 0.5.  Y starts at 1, so two unit ticks to reach 0
-      - yEnd = 10: t = -18: Discard because we're only going forward in time.
-
+  : Solve for
+      yEnd = 0: t = 2: Makes sense.  Every tick results in net reduction of 0.5.  Y starts at 1, so two unit ticks to reach 0
+      yEnd = 10: t = -18: Discard because we're only going forward in time.
  
 -----------------------------------------------------------------------
 
+6y <- y*b: 
+  : yEnd = 6(yFlow * bFlow) + (yStart - yFlow) : we don't care about 'bStart - bFlow' until we analyze b (at which pont we don't care about y
+  : yEnd = 6(t*t) + 1 - t
+  : -6t^2 + t = 1 - yEnd
+  : -t(6t-1) = 1 - yEnd
+  : -t(6t-1) - 1 = -yEnd
+  : t(6t-1) + 1 = yEnd
+  : Solve for 
+      yEnd = 0: t(6t-1) = (yEnd - 1); no solution exists.  That's okay, we don't expect a bottoming out
+      yEnd = 10: tops out at t = 1.311, according to desmos: 
+        > at 6(1.311^2) + 1 - 1.311 = 10.001326 (rounding issues I assume)
+        > so, yes, it checks out.
 
-g <- y*b: what does this represent and is it workable in this transfer logic?
+-----------------------------------------------------------------------
+
+6y^2 + 2y <- 0.5y
+  : How does this translate?
+  : Bottom line, we're translating into a GROWTH rate for the variable, then adding it to varStart
+  : The relevant parts of the <- function express the growth rate
+  : But it seems to be the right side that we substitute for time.  
+
+Being growth rates, seems we can isolate the additive parts?
+  : 6y^2 <- 0.5y
+  : 2y <- 0.5y
+
+And at least for multiplication, seems the operations are opposite of equations
+  : yEnd1 = 6(0.5*yFlow)^2
+  : yEnd2 = 2(0.5*yFlow)
+  : yEnd3 = yStart - yFlow (the non growth part)
+  : yEnd = yEnd1 + yEnd2 + yEnd3 
+  : yEnd = 3*yFlow^2 + yFlow + (yStart - yFlow)
+  : yEnd = 3t^2 + t + 1 - t
+  : yEnd = 3t^2 + 1
+  : 3t^2 = yEnd - 1
+  : t^2 = (yEnd - 1) / 3
+  : t = sqrt((yEnd - 1) / 3)
+  : Solve for:
+      yEnd = 0: t = sqrt(0/3) = 0, bad, means it's already 0, which is wrong
+      yEnd = 10: t = sqrt(9/3) = sqrt(3) = 1.73205081
+	At this time, y has yielded 0.866025405, returning 6.23205082, decidedly less than the bound
+
+WRONG!!!!
+
+
+
+
 
