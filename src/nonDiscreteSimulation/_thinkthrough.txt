@@ -80,6 +80,17 @@ Now, back to t0, same constraints, except:
         > at 6(1.311^2) + 1 - 1.311 = 10.001326 (rounding issues I assume)
         > so, yes, it checks out.
 
+if y = 1t and b = 1/t then
+  6t = t*(1/t)
+  6t = t/t
+  6t = 1
+  And so it doesn't matter how you change either y or b, you get 6t.  
+  Despite the arrow, it is not describing causation. The dependency of everything is on t, not on left and right sides
+  
+  
+
+
+
 -----------------------------------------------------------------------
 
 6y^2 + 2y <- 0.5y
@@ -109,6 +120,14 @@ And at least for multiplication, seems the operations are opposite of equations
 	At this time, y has yielded 0.866025405, returning 6.23205082, decidedly less than the bound
 
 WRONG!!!!
+
+How about we just convert right side in terms of t, but NOT left side.
+Justified based on right side, plugging in for 't' means that's how much has become available as a source.
+But on left side, it's not dependent on 't'.  It's dependent on the right side.
+
+
+
+
 
 
 
