@@ -42,31 +42,6 @@ Now, back to t0, same constraints, except:
 
 -----------------------------------------------------------------------
 
-2y <- y 
-  : yEnd = 2*yFlow + (yStart - yFlow)
-  : yEnd = 2*t + 1 - t
-  : yEnd = t + 1
-  : yEnd - 1 = t
-  : t = yEnd - 1
-  : Solve for
-      yEnd = 0: t = -1, negative so discard
-      yEnd = 10: t = 9, we start y = 1, every tick nets an extra 1, so yes, 9 ticks gets us to 10
-
------------------------------------------------------------------------
-
-0.5y <- y
-  : yEnd = 0.5*yFlow + (yStart - yFlow)
-  : yEnd = 0.5t + 1 - t
-  : t - 0.5t = 1 - yEnd
-  : t(1 - 0.5) = 1 - yEnd
-  : t = 2(1 - yEnd)
-  : t = 2 - 2*yEnd
-  : Solve for
-      yEnd = 0: t = 2: Makes sense.  Every tick results in net reduction of 0.5.  Y starts at 1, so two unit ticks to reach 0
-      yEnd = 10: t = -18: Discard because we're only going forward in time.
- 
------------------------------------------------------------------------
-
 6y <- y*b: 
   : yEnd = 6(yFlow * bFlow) + (yStart - yFlow) : we don't care about 'bStart - bFlow' until we analyze b (at which pont we don't care about y
   : yEnd = 6(t*t) + 1 - t
@@ -96,48 +71,94 @@ if y = 1t and b = 1/t then
   So how do you represent their interation?  
 
   Confirmed with misty.  Furthermore, the equation may not even have a solution (at least desmos can't plot it).  
-  When you have y on both sides, you constrain it on both sides.  You minus well say 6 = 1.  Doesn't work.
+  When you have y on both sides, you constrain it on both sides.  You minus well say 6 = 1.  Doesn't work.  
 
+--------------------------------------------------------------------------------------------------------------
 
------------------------------------------------------------------------
+Chemistry coefficients represent proportions, additions represent really just presence, so they minus well be commas
 
-6y^2 + 2y <- 0.5y
-  : How does this translate?
-  : Bottom line, we're translating into a GROWTH rate for the variable, then adding it to varStart
-  : The relevant parts of the <- function express the growth rate
-  : But it seems to be the right side that we substitute for time.  
+  6y, g <- y, 2b			: The input of 1y and 2b outputs 6y, 1g, and 0b.  
+  yChange = 6y - y = 5y
+  gChange = g - 0 = g
+  bChange = 0 - 2b = -2b
+  
+  So I think I was closer with "growth" rates, but not exactly.
 
-Being growth rates, seems we can isolate the additive parts?
-  : 6y^2 <- 0.5y
-  : 2y <- 0.5y
+--------------------------------------------------------------------------------------------------------------
 
-And at least for multiplication, seems the operations are opposite of equations
-  : yEnd1 = 6(0.5*yFlow)^2
-  : yEnd2 = 2(0.5*yFlow)
-  : yEnd3 = yStart - yFlow (the non growth part)
-  : yEnd = yEnd1 + yEnd2 + yEnd3 
-  : yEnd = 3*yFlow^2 + yFlow + (yStart - yFlow)
-  : yEnd = 3t^2 + t + 1 - t
-  : yEnd = 3t^2 + 1
-  : 3t^2 = yEnd - 1
-  : t^2 = (yEnd - 1) / 3
-  : t = sqrt((yEnd - 1) / 3)
-  : Solve for:
-      yEnd = 0: t = sqrt(0/3) = 0, bad, means it's already 0, which is wrong
-      yEnd = 10: t = sqrt(9/3) = sqrt(3) = 1.73205081
-	At this time, y has yielded 0.866025405, returning 6.23205082, decidedly less than the bound
+Represent the following:
+  - Per unit of time, you get 1y and 1b
+  - You can convert y and b to get 1g.  To do that, you multiply y and b.  
 
-WRONG!!!!
+The y and b are the inputs, and related to time.
+The g is output, and not related to time, but rather to y and b 
+  (though later on we may need to use its flow to upper constrain how much it an take in, but ignore for now)
 
-How about we just convert right side in terms of t, but NOT left side.
-Justified based on right side, plugging in for 't' means that's how much has become available as a source.
-But on left side, it's not dependent on 't'.  It's dependent on the right side.
+y[6y], g[y*b] <- y, 2b 	: maybe, with var[] 
+			  'var' - the related variable to output, 
+			  '[]' how to calculate it in relation to inputs.  
+				In the case of g[y*b], y*b would be y*2b.  
+			  Coefficients on the right side done away with alltogether, so proportions not fixed
+			  
+Matrix is tempting but don't know if it quite works due to pointers to what would be different columns and different rows in nonlinear fashion
 
+y[6y], g[y*b] <- y[t], b[2t] : So var[] notation is broadened, do [] to get var, but here it's as throughput, not for the user
+y[6t], g[t*2t] <- y[t], b[2t]
 
+Now convert to change, and to do this, you match variables by type
+yChange = 6t - t = 5t
+bChange = 0 - 2t = -2t : there is no b in the source, which is the same as b[0]
+gChange = t*2t - 0 = 2t * t = 2t^2
 
+Now, convert to end values 
+yEnd = yStart + yChange = 1 + 5t = 5t + 1
+bEnd = bStart + bChange = 2 - 2t = -2t + 1
+gEnd = gStart + gChange = 0 + 2t^2 = 2t^2 
 
+Check constraints for when each would bottom or top out:
 
+Bottom Out			Top Out
 
+yEnd = 0			yEnd = 10
+  5t + 1 = 0			  5t + 1 = 10
+  5t = -1			  5t = 9
+  t = -1/5 			  t = 9/5
+  We don't go back in             t = 1.8
+  time.  So we'll never		Checks out:
+  get there.			  Starts with 1 and a 
+				  net change of 5 per t.
+				  5 * 1.8 + 1 = 10
 
+bEnd = 0			bEnd = 10
+  -2t + 1 = 0			  -2t + 1 = 10
+  -2t = -1			  -2t = 9
+  2t = 1			  2t = -9
+  t = 0.5			  t = -9/5
+Checks out:			Don't go back in time
+  Starts with 1 and you
+  just keep loosing 2 per
+  t with no gain.  You're 
+  out in half a t.
 
+gEnd = 0			gEnd = 10
+  2t^2 = 0			  2t^2 = 10
+  t^2 = 0			  t^2 = 5
+  t = 0				  t = sqrt(5)
+  Checks out, initial 		  t = 2.2361...
+  conditions have g as 0.	Checks out:
+  But at t=0 2t^2 is 		  At that time,
+  positive.  Meaning this	  y and b give as 2.2361
+  is a 'touch' of the 		  we double b and multiply with y
+  bottom bound, not a		  2.2361 * 2*2.2361 = 10.
+  passing of it.  So we
+  keep ticking.
+    
+So, in summary;
+ y never bottoms out, tops out at t = 1.8
+ b bottoms out at t = 0.5, never tops out
+ g starts at bottom, but only goes up from there so we don't say it bottoms out, it tops out at 2.2361
+ Of these, b goes out of bounds first at t = 0.5
+ There is no more b to give after that, so the relation breaks down afterwards.
+ So we tick time by 0.5
 
+I think I got it.  Now hopefully it's just a matter of notation, and recoding.
