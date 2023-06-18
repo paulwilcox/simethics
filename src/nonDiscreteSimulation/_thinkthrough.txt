@@ -87,8 +87,16 @@ if y = 1t and b = 1/t then
   And so it doesn't matter how you change either y or b, you get 6t.  
   Despite the arrow, it is not describing causation. The dependency of everything is on t, not on left and right sides
   
-  
+  y and b are not numeric variables, they are types.  
+  You can't take y and b and add them together.  Well, here you can and you get 'total grahms'.  But thats only because
+  we defined units in terms of grahms.  And even then we lost y and b as information.  But to hone the point.  Imagine
+  y was a grahm of yellow powder, and b is a blue baloon.  Add them or multiply them together and you get a total what?
 
+  In this context, it seems you really can't multiply types.  In fact, seems you can't even add them.  Right?
+  So how do you represent their interation?  
+
+  Confirmed with misty.  Furthermore, the equation may not even have a solution (at least desmos can't plot it).  
+  When you have y on both sides, you constrain it on both sides.  You minus well say 6 = 1.  Doesn't work.
 
 
 -----------------------------------------------------------------------
