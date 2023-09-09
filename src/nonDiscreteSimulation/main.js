@@ -1,8 +1,5 @@
 let n = require('./boundNumber').n;
 let world = require('./world.js');
-let fd = require('fluent-data');
-let solver = require('./solver');
-let solution = require('./variableSolution');
 
 let time = { 
     previous: null, 
@@ -51,8 +48,20 @@ let entities = [
     }
 ];
 let relations = [
-    'green <- yellow + blue'
+    `yellow >= 5, yellow, 2*blue -> 
+        6*yellow, green: yellow*blue`
 ]
+
+/*
+    - If there are two objects with 'yellow', I have it 
+      considered that each contributes only it's flow.
+    - But what if there are two relations with yellow.
+      I don't think this is properly managed so that 
+      an object contributes half to each.
+    - If we incorporate 't' into each relation, would
+      this get rid of the need to incorporate a flow
+      rate in the bound numbers?
+*/
 
 let w = new world(entities, relations)
 

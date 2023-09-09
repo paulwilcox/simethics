@@ -162,3 +162,43 @@ So, in summary;
  So we tick time by 0.5
 
 I think I got it.  Now hopefully it's just a matter of notation, and recoding.
+
+-----------------------------------------------------------------------------------
+GOALS
+
+** Syntax **
+
+Thinking of something like
+- 'yellow, 2*blue -> 6*yellow, green: yellow*blue'
+- 'input 1 yellow and 2 blue, output 6 * inputted yellow and an amount of green equal to input yellow * input blue'
+- This approach might be easier to implement, but also doesn't have outputs in same units as inputs
+    > green: yellow*blue is yellow input * blue input, which is yellow * 2*blue 
+
+** Composition **
+
+What's it look like:
+- 'yellow, 2*blue -> 6*yellow, green: yellow*blue'
+- 'yellow, 2*green -> 
+
+** Problems **
+
+- How to break the assumption that objects which rules reference
+  have the same internal flows.  (Hard, and even harder if non-linear)
+  > Might not be hard.  Might be partly or fully already implemented.
+  > Take each item at a time.  Assume the rest are simply present
+    enough to meet their proportions.  Then just see when the item
+    reaches its limit on its own terms.   Take the least of these.
+- How to have specific objects of the same type commune together
+  in rules that describe variables (Easy - in fact partially solved)
+- How to get rules to combine with each other.  (Medium - standard math)
+- How to reduce processing due to # of rules (Medium - encapsulation)
+  > but has to pass and protect rules in addition to values
+- How to allow abstraction, so that subtypes get picked up if a 
+  rule describes a type.
+- How to treat bound numbers as a subset of world (Easy - a bound number
+  can be thought of as a world with one value, of one type, so any rules,
+  if ever phrased abstractly, apply only to that one value.  Question is
+  do I actually change my implementation to reflect this)
+
+
+
