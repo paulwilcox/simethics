@@ -11,11 +11,14 @@
     - At present, the solution is if it's not an instance, then the slot as a function states that the constraint is not complete
 */
 
+// IMPORTS FROM FLLUENT-DATA
+
 let isString = input =>
     typeof input === 'string' 
     || input instanceof String;
 
 // equality by values (fluent-data -> general.js)
+
 let eq = (obj1, obj2) => {
 
     if (obj1 == undefined && obj2 != undefined) return false;
@@ -35,28 +38,89 @@ let eq = (obj1, obj2) => {
         return obj1 == obj2;
 
     for(let key of obj1Keys) {
-        
         if(!eq(obj1[key], obj2[key]))
             return false;
-        
     }
 
     return true;
 
 }
 
+// Max Leizerovich: stackoverflow.com/questions/31128855
+let setEquals = (a, b) =>
+    a.size === b.size 
+    && [...a].every(value => b.has(value));
+
+let isSubsetOf = (sub, sup) =>  
+    setEquals (
+        new Set(
+            [...sub]
+            .filter(x => [...sup].indexOf(x) >= 0) // intersection
+        ), 
+        sub
+    );
+
+// Thanks domino at https://stackoverflow.com/questions/18884249
+let isIterable = (input, includeStrings = false) => 
+    !includeStrings && isString(includeStrings) ? false
+    : Symbol.iterator in Object(input);
+
+// LOCAL CODE
+
 // TODO: replace 'function' with 'range' to implement intermediate type
 // Range will allow a better member-of comparison if range1 < range2 can be identified
 // Because function1 < function2 cannot be identified
-class range {
-    constructor(array) {
-        if (!Array.isArray(vals)) 
-            throw `please pass an array`
+class _continuousRange {
+
+    constructor(lowerIsInclusive, lower, upper, upperIsInclusive) {
+        this.lowerIsInclusive = lowerIsInclusive
+        this.upperIsInclusive = upperIsInclusive
+        this.lower = lower
+        this.upper = upper
     }
+    
+    contains(item) {
+        item >= this.lower 
+        && item <= this.upper 
+        && (this.lower != item || this.lowerIsInclusive)
+        && (this.upper != item || this.upperIsInclusive)
+    }
+
+    isSupersetOf(other) {
+
+        if (other instanceof _continuousRange) 
+            return other.lower >= this.lower 
+                && (
+                    other.lower != this.lower // then it's just '>' and that's fine
+                    || !other.lowerIsInclusive // Other.lower never really occurs, so it should always have a match
+                    || this.lowerIsInclusive // This.lower occurs.  Even if other.lower occurs it has a match in this
+                )
+                && other.upper <= this.upper
+                && (other.upper != this.upper || !other.upperIsInclusive || this.upperIsInclusive)
+
+        if (!isIterable(other))
+            throw `other is not iterable.  Cannot compare this.IsSupersetOf(other)`
+
+        return other.some(oItem => this.contains(oItem))
+
+    }
+
 }
 
-// 'this' should be a world/room 
-function memberOf (other) {
+class _finiteRange {
+    
+    constructor(...items) {
+        this.items = items
+    }
+
+    isSubsetOf(other) {
+
+    }
+
+}
+
+// 'this' should be bound to a world/room 
+function isMemberOf (other) {
 
     if (other.members !== undefined)
         return other.members(this);
@@ -82,8 +146,8 @@ function memberOf (other) {
         
         // TODO: But they could both be functions, with one having a broader range than the other.
         // We need it so that memberOf takes this into account.
-        if (typeof thisVal !== 'function' && typeof otherVal === 'function')
-            if (!otherVal(thisVal))
+        if (typeof thisVal !== 'range' && typeof otherVal === 'range')
+            if (!thisVal)
                 return false
             else 
                 continue
@@ -100,25 +164,25 @@ class room {
 
     add(...items) {
 
-        for(let item of items) {
+        for(let oItem of items) {
 
-            if (item === undefined || item === null)
+            if (oItem === undefined || oItem === null)
                 throw `can't pass undefined or null`
-            if (item.id === undefined) 
-                throw `passed item must have an 'id' property`
+            if (oItem.id === undefined) 
+                throw `passed oItem must have an 'id' property`
             if (
-                typeof item !== 'object' 
-                || typeof item === 'string' 
-                || typeof item === 'function' 
-                || Array.isArray(item)
+                typeof oItem !== 'object' 
+                || typeof oItem === 'string' 
+                || typeof oItem === 'function' 
+                || Array.isArray(oItem)
             )
-                throw `passed item must be an object in the traditional sense`
+                throw `passed oItem must be an object in the traditional sense`
             
-            if (item.memberOf === undefined)
-                item.memberOf = memberOf
+            if (oItem.isMemberOf === undefined)
+                oItem.isMemberOf = isMemberOf
             // Just as you wouldn't overwrite a built-in object 
             // property anywhere else, don't do it here.
-            this[item.id] = item 
+            this[oItem.id] = oItem 
 
         }
 
@@ -146,10 +210,10 @@ let r = new room().add(...entities)
 
 console.log({
     rusty: r.rusty,
-    isMammal: r.rusty.memberOf(r.mammal)
+    isMammal: r.rusty.isMemberOf(r.mammal)
 })
 
 console.log({
     goldie: r.goldie,
-    isMammal: r.goldie.memberOf(r.mammal)
+    isMammal: r.goldie.isMemberOf(r.mammal)
 })
