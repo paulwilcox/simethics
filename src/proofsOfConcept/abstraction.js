@@ -70,57 +70,98 @@ let isIterable = (input, includeStrings = false) =>
 // TODO: replace 'function' with 'range' to implement intermediate type
 // Range will allow a better member-of comparison if range1 < range2 can be identified
 // Because function1 < function2 cannot be identified
-class _continuousRange {
+class interval {
 
     constructor(lowerIsInclusive, lower, upper, upperIsInclusive) {
+        
         this.lowerIsInclusive = lowerIsInclusive
         this.upperIsInclusive = upperIsInclusive
         this.lower = lower
         this.upper = upper
+        
+        if (this.lower > this.upper) 
+            throw 'lower cannot be greater than upper'
+
+        this.length = 
+            this.lower == this.upper && this.lowerIsInclusive && this.upperIsInclusive ? 1
+            : this.lower == this.upper ? 0
+            : Infinity
+
     }
-    
-    contains(item) {
-        item >= this.lower 
-        && item <= this.upper 
-        && (this.lower != item || this.lowerIsInclusive)
-        && (this.upper != item || this.upperIsInclusive)
+
+    // aliases
+    get l () { return this.lower }
+    get u () { return this.upper }
+    get li () { return this.lowerIsInclusive }
+    get ui () { return this.upperIsInclusive }
+
+    // Combination of hasElement and isSupersetOf,
+    // so that it works for members and sets.
+    contains (other) {
+        return this.hasElement(other) || this.isSupersetOf(other)
     }
 
-    isSupersetOf(other) {
+    hasElement(item) {
+        let degenerateInterval = new interval(true, item, item, true)
+        return this.isSupersetOf(degenerateInterval)
+    }
 
-        if (other instanceof _continuousRange) 
-            return other.lower >= this.lower 
-                && (
-                    other.lower != this.lower // then it's just '>' and that's fine
-                    || !other.lowerIsInclusive // Other.lower never really occurs, so it should always have a match
-                    || this.lowerIsInclusive // This.lower occurs.  Even if other.lower occurs it has a match in this
-                )
-                && other.upper <= this.upper
-                && (other.upper != this.upper || !other.upperIsInclusive || this.upperIsInclusive)
+    isSupersetOf(maybeSubSet) {
 
-        if (!isIterable(other))
-            throw `other is not iterable.  Cannot compare this.IsSupersetOf(other)`
+        // Change in language for brevity and clarity
+        let sub = maybeSubSet
+        let sup = this
+        let lIsInf = (itvl) => itvl.l === -Infinity && itvl.lii
+        let uIsInf = (itvl) => itvl.u === Infinity && itvl.uii
 
-        return other.some(oItem => this.contains(oItem))
+        if (!isIterable(sub) && (!sub instanceof interval))
+            throw 
+                `'maybeSubset' does not appear to be a set of any sort.  ` + 
+                `Perhaps try .hasElement() or .contains()?`
 
+        if (isIterable(sub))
+            return sub.all(subElement => {
+                sup.hasElement(subElement)
+            })
+
+        return lIsInf(sub) && !lIsInf(sup) ? false
+            : uIsInf(sub) && !uIsInf(sup) ? false
+            : sub.l < sup.l ? false
+            : sub.u > sup.u ? false
+            : true 
+
+    }
+
+    isSubsetOf(maybeSuperset) {
+
+        // It's tempting to think that this can still work with 
+        // 'maybeSuperset' being an iterable if this.length = 1.
+        // But even then it would be an interval/set of one element 
+        // compared against an element: a <> {a}
+        if (!isIterable(maybeSuperset))
+            throw 
+                `'maybeSuperset' must be an interval for .isSubsetOf().` +
+                `Perhaps try .isContainedBy()?`
+        
+        return maybeSuperset.isSubsetOf(this)
+
+    }
+
+    isContinedBy(other) {
+        return other.contains(this)
     }
 
 }
 
-class _finiteRange {
-    
-    constructor(...items) {
-        this.items = items
+class infiniteSet {
+    constructor() {
+        this.items = []; // for individual elements or intervals
     }
-
-    isSubsetOf(other) {
-
-    }
-
 }
+
 
 // 'this' should be bound to a world/room 
-function isMemberOf (other) {
+function isContinedBy (other) {
 
     if (other.members !== undefined)
         return other.members(this);
@@ -179,7 +220,7 @@ class room {
                 throw `passed oItem must be an object in the traditional sense`
             
             if (oItem.isMemberOf === undefined)
-                oItem.isMemberOf = isMemberOf
+                oItem.isMemberOf = isContinedBy
             // Just as you wouldn't overwrite a built-in object 
             // property anywhere else, don't do it here.
             this[oItem.id] = oItem 
