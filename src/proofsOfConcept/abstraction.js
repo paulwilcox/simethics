@@ -244,10 +244,21 @@ class intervals {
         return this
     }
 
-    includes (other) {
-        let sup = this.intervals
-        let sub = other.intervals        
-        // tODO
+    has (other) {
+        // is any interval in 'other' ...
+        return other.intervals.any(oi =>
+            // ... not included within some interval in 'this'? 
+            !this.intervals.some(ti => includesInterval(ti,oi))
+        ) 
+    }
+
+    in (other) {
+        // is any interval in 'this' ...
+        return this.intervals.any(ti =>
+            // ... not included within some interval in 'other'? 
+            !other.intervals.some(oi => includesInterval(oi,ti))
+        ) 
+
     }
 
     // remove
