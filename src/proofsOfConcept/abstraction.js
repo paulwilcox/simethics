@@ -88,128 +88,150 @@ class interval {
     get li () { return this.lowerIsInclusive }
     get ui () { return this.upperIsInclusive }
 
-    includesInterval(other) {
+}
 
-        if (!other instanceof interval)
-            throw `'other' must be an interval`
+// for intervals, not for export
+function includesInterval(
+    sup, // as in, maybe it's a superset 
+    sub // as in, maybe it's a subset
+) {
 
-        // Change in language for brevity and clarity
-        let sub = other // sub, as in maybe it's a subset
-        let sup = this // same, exept superset
-        let lIsInf = (itvl) => itvl.l === -Infinity && itvl.li
-        let uIsInf = (itvl) => itvl.u === Infinity && itvl.ui
+    let lIsInf = (itvl) => itvl.l === -Infinity && itvl.li
+    let uIsInf = (itvl) => itvl.u === Infinity && itvl.ui
 
-        return lIsInf(sub) && !lIsInf(sup) ? false
-            : uIsInf(sub) && !uIsInf(sup) ? false
-            : sub.l < sup.l ? false
-            : sub.u > sup.u ? false
-            : true 
+    return lIsInf(sub) && !lIsInf(sup) ? false
+        : uIsInf(sub) && !uIsInf(sup) ? false
+        : sub.l < sup.l ? false
+        : sub.u > sup.u ? false
+        : true 
+
+}
+
+// for intervals, not for export
+function distinct(incomingIntervals) {
+
+    let distincts = []
+    let sorted = fd(incomingIntervals).sort(itv => [itv.l, !itv.li])
+    
+    for(let incoming of sorted) {
+
+        let lastDistinct = distincts[distincts.length - 1]
+        
+        if (lastDistinct === null) {
+            distincts.push(incoming)
+            continue
+        }
+
+        let whichStartsFirst = 
+            incoming.l < lastDistinct.l ? incoming
+            : incoming.l > lastDistinct.l ? lastDistinct
+            : incoming.l !== lastDistinct.l ? 'Not Comparable'
+            : incoming.li ? incoming // Doesn't matter if also lastDistinct
+            : lastDistinct // Doesn't matter if also incoming
+            
+        let whichEndsLast = 
+            incoming.u > lastDistinct.u ? incoming
+            : incoming.u < lastDistinct.u ? lastDistinct
+            : incoming.l !== lastDistinct.l ? 'Not Comparable'
+            : incoming.ui ? incoming // Doesn't matter if also lastDistinct
+            : lastDistinct // Doesn't matter if also incoming
+
+        if ([whichStartsFirst,whichEndsLast].includes('Not Comparable')) 
+            throw 'incoming and lastDistinct do not seem to be comparable'
+
+        let whichStartsSecond = 
+            whichStartsFirst == incoming 
+            ? lastDistinct 
+            : incoming 
+
+        let isOverlapping = 
+            whichStartsFirst.u > whichStartsSecond.l 
+            || (
+                whichStartsFirst.u === whichStartsSecond.l
+                // We'll call perfectly adjacent 'overlapping' for our purposes.
+                // So only if neither is inclusive do we leave a gap (an infinitesimal).
+                && whichStartsFirst.ui || whichStartsSecond.li
+            )  
+
+        // since it's pre-sorted, non-overlap means incoming is later 
+        if (!isOverlapping) {
+            distincts.push(incoming)
+            continue
+        }
+            
+        // Overlap means we should extend previous
+        // Due to presorting, lastdistinct already has correct lower settings
+        lastDistinct.u = incoming.u
+        lastDistinct.ui = incoming.ui
 
     }
 
+    return distincts
 }
 
 class intervals {
     
-    constructor() {
+    constructor(...maybeIntervals) {
         this.intervals = [] 
+        if (maybeIntervals.length > 0)
+            this.merge(...maybeIntervals)
     }
-    
-    /*
-        - 'push' isn't right, because we can't do 
-          the inverse (or are we going to 'pop' infinitesimals?)
-        - Also, we may want to make 'distinct' private and run
-          it always on all inserts, so 'merge' may be best.
-        - For this strategy, for each incoming, find all overlapping,
-          do the distinct, and replace existing overlapping with 
-          distinct results.  
-    */
-    push (...maybeIntervals) {
+
+    // Merges in one or more intervals into the instance.
+    // This implementation keeps intervals simplified and ordered.
+    merge (...maybeIntervals) {
+
         for(let maybeInterval of maybeIntervals) {
             
-            if (maybeInterval instanceof interval) {
-                this.intervals.push(maybeInterval)
-                continue
+            // Possible, but ambiguous and not worth it at the moment  
+            if (isIterable(maybeInterval))
+                throw `maybeInterval cannot have iterables.  ` +  
+                    `Pass iterables with the spread operator if necessary`
+
+            // The interval to merge in
+            let incoming = 
+                maybeInterval instanceof interval
+                ? maybeInterval
+                : new interval(true, ni, ni, true) // pass it as degenerate interval
+
+            let spliceStart = null
+            let spliceLength = 0
+            let overlapping = []
+
+            // Find intervals that overlap with 'incoming' 
+            for (let i = 0; i < this.intervals.length; i++) {
+
+                let existing = this.intervals[i]
+
+                let isOverlapping =
+                    includesInterval(incoming, existing) ||
+                    includesInterval(existing, incoming)
+
+                // presorted, so once it stops, no more overlapping
+                if (!isOverlapping && spliceStart !== null)
+                    break
+
+                overlapping.push(existing)
+
+                if (spliceStart === null)
+                    spliceStart = i
+
+                spliceLength++
+
             }
 
-            let nonIntervals = 
-                isIterable(maybeInterval) ? maybeInterval : [maybeInterval]
+            // locally merge incoming with overlapping
+            overlapping.push(incoming)
+            let distinctified = distinct(overlapping)
 
-            for(let ni of nonIntervals) {
-                let degenerateInterval = new interval(true, ni, ni, true)
-                this.intervals.push(degenerateInterval)
-            } 
-
-        }    
-    }
-
-    // Uses presorting.  
-    // So a binary search tree would be more efficient.  
-    // Likely implement this though in fluent-data.
-    distinct() {
-
-        let result = new intervals()
-        let distincts = result.intervals
-        let sorted = fd(this.intervals).sort(itv => [itv.l, !itv.li])
+            // replace overlapping with locally merged
+            this.intervals.splice(spliceStart, spliceLength, ...distinctified)
+        }   
         
-        for(let incoming of sorted) {
-
-            let lastDistinct = distincts[distincts.length - 1]
-            
-            if (lastDistinct === null) {
-                distincts.push(incoming)
-                continue
-            }
-
-            let whichStartsFirst = 
-                incoming.l < lastDistinct.l ? incoming
-                : incoming.l > lastDistinct.l ? lastDistinct
-                : incoming.l !== lastDistinct.l ? 'Not Comparable'
-                : incoming.li ? incoming // Doesn't matter if also lastDistinct
-                : lastDistinct // Doesn't matter if also incoming
-                
-            let whichEndsLast = 
-                incoming.u > lastDistinct.u ? incoming
-                : incoming.u < lastDistinct.u ? lastDistinct
-                : incoming.l !== lastDistinct.l ? 'Not Comparable'
-                : incoming.ui ? incoming // Doesn't matter if also lastDistinct
-                : lastDistinct // Doesn't matter if also incoming
-
-            if ([whichStartsFirst,whichEndsLast].includes('Not Comparable')) 
-                throw 'incoming and lastDistinct do not seem to be comparable'
-
-            let whichStartsSecond = 
-                whichStartsFirst == incoming 
-                ? lastDistinct 
-                : incoming 
-
-            let isOverlapping = 
-                whichStartsFirst.u > whichStartsSecond.l 
-                || (
-                    whichStartsFirst.u === whichStartsSecond.l
-                    // We'll call perfectly adjacent 'overlapping' for our purposes.
-                    // So only if neither is inclusive do we leave a gap (an infinitesimal).
-                    && whichStartsFirst.ui || whichStartsSecond.li
-                )  
-
-            // since it's pre-sorted, non-overlap means incoming is later 
-            if (!isOverlapping) {
-                distincts.push(incoming)
-                continue
-            }
-             
-            // Overlap means we should extend previous
-            // Due to presorting, lastdistinct already has correct lower settings
-            lastDistinct.u = incoming.u
-            lastDistinct.ui = incoming.ui
-
-        }
-
-        return result
-
+        return this
     }
 
-    // pop
+    // remove
     // includes
     // in
 }
