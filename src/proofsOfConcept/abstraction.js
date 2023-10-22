@@ -1,3 +1,5 @@
+let fd = require('fluent-data')
+
 /*
     Implicit Instancing:
     - An instance of a type is not declared.
@@ -51,15 +53,6 @@ let setEquals = (a, b) =>
     a.size === b.size 
     && [...a].every(value => b.has(value));
 
-let isSubsetOf = (sub, sup) =>  
-    setEquals (
-        new Set(
-            [...sub]
-            .filter(x => [...sup].indexOf(x) >= 0) // intersection
-        ), 
-        sub
-    );
-
 // Thanks domino at https://stackoverflow.com/questions/18884249
 let isIterable = (input, includeStrings = false) => 
     !includeStrings && isString(includeStrings) ? false
@@ -95,34 +88,16 @@ class interval {
     get li () { return this.lowerIsInclusive }
     get ui () { return this.upperIsInclusive }
 
-    // Combination of hasElement and isSupersetOf,
-    // so that it works for members and sets.
-    contains (other) {
-        return this.hasElement(other) || this.isSupersetOf(other)
-    }
+    includesInterval(other) {
 
-    hasElement(item) {
-        let degenerateInterval = new interval(true, item, item, true)
-        return this.isSupersetOf(degenerateInterval)
-    }
-
-    isSupersetOf(maybeSubSet) {
+        if (!other instanceof interval)
+            throw `'other' must be an interval`
 
         // Change in language for brevity and clarity
-        let sub = maybeSubSet
-        let sup = this
-        let lIsInf = (itvl) => itvl.l === -Infinity && itvl.lii
-        let uIsInf = (itvl) => itvl.u === Infinity && itvl.uii
-
-        if (!isIterable(sub) && (!sub instanceof interval))
-            throw 
-                `'maybeSubset' does not appear to be a set of any sort.  ` + 
-                `Perhaps try .hasElement() or .contains()?`
-
-        if (isIterable(sub))
-            return sub.all(subElement => {
-                sup.hasElement(subElement)
-            })
+        let sub = other // sub, as in maybe it's a subset
+        let sup = this // same, exept superset
+        let lIsInf = (itvl) => itvl.l === -Infinity && itvl.li
+        let uIsInf = (itvl) => itvl.u === Infinity && itvl.ui
 
         return lIsInf(sub) && !lIsInf(sup) ? false
             : uIsInf(sub) && !uIsInf(sup) ? false
@@ -132,34 +107,114 @@ class interval {
 
     }
 
-    isSubsetOf(maybeSuperset) {
-
-        // It's tempting to think that this can still work with 
-        // 'maybeSuperset' being an iterable if this.length = 1.
-        // But even then it would be an interval/set of one element 
-        // compared against an element: a <> {a}
-        if (!isIterable(maybeSuperset))
-            throw 
-                `'maybeSuperset' must be an interval for .isSubsetOf().` +
-                `Perhaps try .isContainedBy()?`
-        
-        return maybeSuperset.isSubsetOf(this)
-
-    }
-
-    isContinedBy(other) {
-        return other.contains(this)
-    }
-
 }
 
-class infiniteSet {
+class intervals {
+    
     constructor() {
-        this.items = []; // for individual elements or intervals
+        this.intervals = [] 
     }
+    
+    /*
+        - 'push' isn't right, because we can't do 
+          the inverse (or are we going to 'pop' infinitesimals?)
+        - Also, we may want to make 'distinct' private and run
+          it always on all inserts, so 'merge' may be best.
+        - For this strategy, for each incoming, find all overlapping,
+          do the distinct, and replace existing overlapping with 
+          distinct results.  
+    */
+    push (...maybeIntervals) {
+        for(let maybeInterval of maybeIntervals) {
+            
+            if (maybeInterval instanceof interval) {
+                this.intervals.push(maybeInterval)
+                continue
+            }
+
+            let nonIntervals = 
+                isIterable(maybeInterval) ? maybeInterval : [maybeInterval]
+
+            for(let ni of nonIntervals) {
+                let degenerateInterval = new interval(true, ni, ni, true)
+                this.intervals.push(degenerateInterval)
+            } 
+
+        }    
+    }
+
+    // Uses presorting.  
+    // So a binary search tree would be more efficient.  
+    // Likely implement this though in fluent-data.
+    distinct() {
+
+        let result = new intervals()
+        let distincts = result.intervals
+        let sorted = fd(this.intervals).sort(itv => [itv.l, !itv.li])
+        
+        for(let incoming of sorted) {
+
+            let lastDistinct = distincts[distincts.length - 1]
+            
+            if (lastDistinct === null) {
+                distincts.push(incoming)
+                continue
+            }
+
+            let whichStartsFirst = 
+                incoming.l < lastDistinct.l ? incoming
+                : incoming.l > lastDistinct.l ? lastDistinct
+                : incoming.l !== lastDistinct.l ? 'Not Comparable'
+                : incoming.li ? incoming // Doesn't matter if also lastDistinct
+                : lastDistinct // Doesn't matter if also incoming
+                
+            let whichEndsLast = 
+                incoming.u > lastDistinct.u ? incoming
+                : incoming.u < lastDistinct.u ? lastDistinct
+                : incoming.l !== lastDistinct.l ? 'Not Comparable'
+                : incoming.ui ? incoming // Doesn't matter if also lastDistinct
+                : lastDistinct // Doesn't matter if also incoming
+
+            if ([whichStartsFirst,whichEndsLast].includes('Not Comparable')) 
+                throw 'incoming and lastDistinct do not seem to be comparable'
+
+            let whichStartsSecond = 
+                whichStartsFirst == incoming 
+                ? lastDistinct 
+                : incoming 
+
+            let isOverlapping = 
+                whichStartsFirst.u > whichStartsSecond.l 
+                || (
+                    whichStartsFirst.u === whichStartsSecond.l
+                    // We'll call perfectly adjacent 'overlapping' for our purposes.
+                    // So only if neither is inclusive do we leave a gap (an infinitesimal).
+                    && whichStartsFirst.ui || whichStartsSecond.li
+                )  
+
+            // since it's pre-sorted, non-overlap means incoming is later 
+            if (!isOverlapping) {
+                distincts.push(incoming)
+                continue
+            }
+             
+            // Overlap means we should extend previous
+            // Due to presorting, lastdistinct already has correct lower settings
+            lastDistinct.u = incoming.u
+            lastDistinct.ui = incoming.ui
+
+        }
+
+        return result
+
+    }
+
+    // pop
+    // includes
+    // in
 }
 
-
+/*
 // 'this' should be bound to a world/room 
 function isContinedBy (other) {
 
@@ -200,6 +255,7 @@ function isContinedBy (other) {
     return true
 
 }
+*/
 
 class room {
 
