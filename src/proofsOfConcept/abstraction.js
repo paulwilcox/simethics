@@ -181,18 +181,31 @@ class intervals {
     // This implementation keeps intervals simplified and ordered.
     merge (...maybeIntervals) {
 
+        // flatten and convert non-intervals into intervals
+        let incomings = []
         for(let maybeInterval of maybeIntervals) {
-            
+
             // Possible, but ambiguous and not worth it at the moment  
             if (isIterable(maybeInterval))
                 throw `maybeInterval cannot have iterables.  ` +  
                     `Pass iterables with the spread operator if necessary`
 
-            // The interval to merge in
-            let incoming = 
-                maybeInterval instanceof interval
-                ? maybeInterval
-                : new interval(true, ni, ni, true) // pass it as degenerate interval
+            // if it's already an interval, just pass it in as is
+            if (maybeInterval instanceof interval)
+                incomings.push(maybeInterval)
+            
+            // if it's a set of intervals, loop and pass in each
+            else if (maybeInterval instanceof intervals) 
+                for(let itvl of maybeInterval.intervals)
+                    incomings.push(itvl)
+            
+            // otherwise, pass it as degenerate interval
+            else 
+                incomings.push(new interval(true, ni, ni, true)) 
+            
+        }
+
+        for(let incoming of incomings) {
 
             let spliceStart = null
             let spliceLength = 0
@@ -229,6 +242,12 @@ class intervals {
         }   
         
         return this
+    }
+
+    includes (other) {
+        let sup = this.intervals
+        let sub = other.intervals        
+        // tODO
     }
 
     // remove
