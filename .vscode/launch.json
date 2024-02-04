@@ -7,11 +7,17 @@
         {
             "type": "node",
             "request": "launch",
-            "name": "Run nonDiscreteSimulation",
+            "name": "main.js",
             "skipFiles": [
                 "<node_internals>/**"
             ],
             "program": "${workspaceFolder}\\src\\nonDiscreteSimulation\\main.js"
-        }
+        },
+        {
+            "name": "abstraction.js",
+            "type": "node",
+            "request": "launch",
+            "program": "${workspaceFolder}\\src\\proofsOfConcept\\abstraction.js"
+        }        
     ]
 }

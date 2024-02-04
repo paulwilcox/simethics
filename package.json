@@ -5,6 +5,7 @@
   "main": "index.js",
   "scripts": {
     "nonDiscreteSimulation": "node ./src/nonDiscreteSimulation/main.js",
+    "abstraction": "node ./src/proofsOfConcept/abstraction.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [
