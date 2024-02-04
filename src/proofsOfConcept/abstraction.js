@@ -84,9 +84,20 @@ class interval {
 
     // aliases
     get l () { return this.lower }
+    set l (value) { this.lower = value }
     get u () { return this.upper }
+    set u (value) { this.upper = value }
     get li () { return this.lowerIsInclusive }
+    set li (value) { this.lowerIsInclusive = value }
     get ui () { return this.upperIsInclusive }
+    set ui (value) { this.upperIsInclusive = value }
+
+    toString() {
+        return `${this.lowerIsInclusive ? '⟦' : '⦅'}` + 
+            `${this.lower},` + 
+            `${this.upper}` + 
+            `${this.upperIsInclusive ? '⟧' : '⦆'}` 
+    }
 
 }
 
@@ -117,7 +128,7 @@ function distinct(incomingIntervals) {
 
         let lastDistinct = distincts[distincts.length - 1]
         
-        if (lastDistinct === null) {
+        if (lastDistinct === undefined) {
             distincts.push(incoming)
             continue
         }
@@ -150,7 +161,7 @@ function distinct(incomingIntervals) {
                 whichStartsFirst.u === whichStartsSecond.l
                 // We'll call perfectly adjacent 'overlapping' for our purposes.
                 // So only if neither is inclusive do we leave a gap (an infinitesimal).
-                && whichStartsFirst.ui || whichStartsSecond.li
+                && (whichStartsFirst.ui || whichStartsSecond.li)
             )  
 
         // since it's pre-sorted, non-overlap means incoming is later 
@@ -177,9 +188,17 @@ class intervals {
             this.merge(...maybeIntervals)
     }
 
-    // Merges in one or more intervals into the instance.
+    // Merges interval(s) into the instance.
     // This implementation keeps intervals simplified and ordered.
     merge (...maybeIntervals) {
+
+        // allow .merge(bool, min, max, bool) notation
+        if (typeof maybeIntervals[0] === 'boolean') {
+            if (typeof maybeIntervals[3] !== 'boolean')
+                throw `interval construction notation not correct`
+            let i = new interval(...maybeIntervals)
+            maybeIntervals = [i]
+        }
 
         // flatten and convert non-intervals into intervals
         let incomings = []
@@ -201,45 +220,11 @@ class intervals {
             
             // otherwise, pass it as degenerate interval
             else 
-                incomings.push(new interval(true, ni, ni, true)) 
+                incomings.push(new interval(true, maybeInterval, maybeInterval, true)) 
             
         }
 
-        for(let incoming of incomings) {
-
-            let spliceStart = null
-            let spliceLength = 0
-            let overlapping = []
-
-            // Find intervals that overlap with 'incoming' 
-            for (let i = 0; i < this.intervals.length; i++) {
-
-                let existing = this.intervals[i]
-
-                let isOverlapping =
-                    includesInterval(incoming, existing) ||
-                    includesInterval(existing, incoming)
-
-                // presorted, so once it stops, no more overlapping
-                if (!isOverlapping && spliceStart !== null)
-                    break
-
-                overlapping.push(existing)
-
-                if (spliceStart === null)
-                    spliceStart = i
-
-                spliceLength++
-
-            }
-
-            // locally merge incoming with overlapping
-            overlapping.push(incoming)
-            let distinctified = distinct(overlapping)
-
-            // replace overlapping with locally merged
-            this.intervals.splice(spliceStart, spliceLength, ...distinctified)
-        }   
+        this.intervals = distinct([...this.intervals, ...incomings])
         
         return this
     }
@@ -261,10 +246,35 @@ class intervals {
 
     }
 
+    toString(pretty = false) {
+        return this.intervals
+        .map(i => i.toString())
+        .join(`,${pretty ? `\r\n` : ''}`)
+    }
+
+    log(caption, pretty) {
+        let stringified = this.toString(pretty)
+        if (caption) 
+            stringified = caption + (pretty ? `\n` : '') + stringified
+        console.log(stringified)
+    }
     // remove
-    // includes
-    // in
+    // join, leftJoin, fullJoin
 }
+
+new intervals()
+    .merge(true, 5, 9, true)
+    .merge(false, 7, Infinity, true)
+    .merge(true, 1, 3, false)
+    .log('Numbers:', true)
+
+new intervals()
+    .merge(false, "beach", "node", true)
+    .merge(true, "minion", "ponder", true)
+    .log('\nWords:', true)
+
+return 
+
 
 /*
 // 'this' should be bound to a world/room 
