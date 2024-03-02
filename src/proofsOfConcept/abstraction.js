@@ -67,6 +67,34 @@ class interval {
 
     constructor(lowerIsInclusive, lower, upper, upperIsInclusive) {
         
+        // if only one argument is passed, it should either be ...
+        // ... an interval, in which case just copy it, or 
+        // ... a non-interval, in which case, if primitive, 
+        //     make a degenerate interval out of it
+        if (
+            lowerIsInclusive !== undefined && 
+            lower === undefined &&
+            upper === undefined && 
+            upperIsInclusive === undefined
+        ) {
+            let obj = lowerIsInclusive
+            let objType = typeof obj
+            if (obj instanceof interval) {
+                lowerIsInclusive = obj.lowerIsInclusive
+                upperIsInclusive = obj.upperIsInclusive
+                lower = obj.lower
+                upper = obj.upper
+            }
+            else if (['number','string'].includes(objType)) {
+                lowerIsInclusive = true
+                upperIsInclusive = true
+                lower = obj
+                upper = obj
+            }
+            else 
+                throw `obj type (${objType}) cannot be converted to an interval.`    
+        }
+
         this.lowerIsInclusive = lowerIsInclusive
         this.upperIsInclusive = upperIsInclusive
         this.lower = lower
@@ -101,21 +129,35 @@ class interval {
 
 }
 
+function asInterval (obj) {
+    return obj instanceof interval
+        ? obj
+        : new interval(obj)
+}
+
+function asIntervals(obj) {
+    if (obj instanceof intervals)
+        return obj
+    else if (!isString(obj) && isIterable(obj))
+        return new intervals(...obj)
+    else 
+        return new intervals(asInterval(obj))
+}
+
 // for intervals, not for export
 function includesInterval(
     sup, // as in, maybe it's a superset 
     sub // as in, maybe it's a subset
 ) {
 
-    let lIsInf = (itvl) => itvl.l === -Infinity && itvl.li
-    let uIsInf = (itvl) => itvl.u === Infinity && itvl.ui
+    let outOfBoundTests = [ 
+        sub.l < sup.l,
+        sub.u > sup.u,
+        sub.l === sup.l && sub.li && !sup.li,
+        sub.u === sup.u && sub.ui && !sup.ui
+    ]
 
-    return lIsInf(sub) && !lIsInf(sup) ? false
-        : uIsInf(sub) && !uIsInf(sup) ? false
-        : sub.l < sup.l ? false
-        : sub.u > sup.u ? false
-        : true 
-
+    return !outOfBoundTests.some(test => test)
 }
 
 // for intervals, not for export
@@ -205,22 +247,22 @@ class intervals {
         for(let maybeInterval of maybeIntervals) {
 
             // Possible, but ambiguous and not worth it at the moment  
-            if (isIterable(maybeInterval))
+            if (isIterable(maybeInterval) && !isString(maybeInterval))
                 throw `maybeInterval cannot have iterables.  ` +  
                     `Pass iterables with the spread operator if necessary`
-
-            // if it's already an interval, just pass it in as is
-            if (maybeInterval instanceof interval)
-                incomings.push(maybeInterval)
             
             // if it's a set of intervals, loop and pass in each
             else if (maybeInterval instanceof intervals) 
                 for(let itvl of maybeInterval.intervals)
                     incomings.push(itvl)
-            
-            // otherwise, pass it as degenerate interval
+
+            // if it's a single interval, just pass it in as is
+            else if (maybeInterval instanceof interval)
+                incomings.push(maybeInterval)
+                    
+            // otherwise, see if it can be converted, and pass
             else 
-                incomings.push(new interval(true, maybeInterval, maybeInterval, true)) 
+                incomings.push(new interval(maybeInterval)) 
             
         }
 
@@ -229,19 +271,32 @@ class intervals {
         return this
     }
 
+    
     has (other) {
-        // is any interval in 'other' ...
-        return other.intervals.any(oi =>
-            // ... not included within some interval in 'this'? 
-            !this.intervals.some(ti => includesInterval(ti,oi))
+        /*
+            - Intervals are always simplified, meaning
+              no overlaps, and if there are gaps, they
+              are true gaps.
+            - So in a comparison, any relevant interval 
+              that is only partially in a comparative will 
+              not be 'rescued' by some third interval.   
+        */
+
+        let otherIntervals = asIntervals(other)
+        
+        // is every interval in 'other' ...
+        return otherIntervals.intervals.every(oi =>
+            // ... included within some interval in 'this'? 
+            this.intervals.some(ti => includesInterval(ti,oi))
         ) 
     }
 
     in (other) {
+        let otherIntervals = asIntervals(other)
         // is any interval in 'this' ...
-        return this.intervals.any(ti =>
+        return this.intervals.every(ti =>
             // ... not included within some interval in 'other'? 
-            !other.intervals.some(oi => includesInterval(oi,ti))
+            otherIntervals.intervals.some(oi => includesInterval(oi,ti))
         ) 
 
     }
@@ -257,21 +312,44 @@ class intervals {
         if (caption) 
             stringified = caption + (pretty ? `\n` : '') + stringified
         console.log(stringified)
+        return this
     }
     // remove
     // join, leftJoin, fullJoin
 }
 
-new intervals()
+let numbers = 
+    new intervals()
     .merge(true, 5, 9, true)
     .merge(false, 7, Infinity, true)
     .merge(true, 1, 3, false)
     .log('Numbers:', true)
 
-new intervals()
+let words = 
+    new intervals()
     .merge(false, "beach", "node", true)
     .merge(true, "minion", "ponder", true)
     .log('\nWords:', true)
+
+console.log(`\ntests`, [
+    !numbers.has(-3),
+    !numbers.has(0.5),
+    numbers.has(1),
+    numbers.has(2.2),
+    !numbers.has(3),
+    !numbers.has(4),
+    numbers.has(5),
+    numbers.has(999999),
+    numbers.has(Infinity),
+])
+
+console.log(`\nwordTtests`, [
+    !words.has("apple"),
+    !words.has("beach"),
+    words.has("monty"),
+    words.has("ponder"),
+    !words.has("zebra")
+])
 
 return 
 
