@@ -18,6 +18,12 @@
             "type": "node",
             "request": "launch",
             "program": "${workspaceFolder}\\src\\proofsOfConcept\\abstraction.js"
+        },
+        {
+            "name": "intervals.tests.js",
+            "type": "node",
+            "request": "launch",
+            "program": "${workspaceFolder}\\src\\proofsOfConcept\\intervals.tests.js"
         }        
     ]
 }

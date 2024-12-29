@@ -1,3 +1,4 @@
+let intervals = require('./intervals')
 
 let numbers = 
     new intervals()

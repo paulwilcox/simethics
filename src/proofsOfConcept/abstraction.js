@@ -14,22 +14,12 @@ let intervals = require('./intervals')
     - At present, the solution is if it's not an instance, then the slot as a function states that the constraint is not complete
 */
 
-
-
-let posNegHaver = {
-    neg: new intervals(true, -Infinity, 0, false),
-    pos: new intervals(false, 0, Infinity, true)
-}
-
-let directions = {
-    neg: -1,
-    zero: 0,
-    pos: 1
-}
-
 function has (parent, child) {
-    let parentKeys = Object.keys(parent)
     let childKeys = Object.keys(child)
+    let parentKeys = 
+        Object.keys(parent)
+        .filter(key => key != 'functions')
+    
     return parentKeys.every(pKey => {
         let pVal = parent[pKey]
         let cVal = child[pKey]
@@ -43,53 +33,42 @@ function has (parent, child) {
     }) 
 }
 
-console.log(has (posNegHaver, directions))
+function setParent(child, parent) {
+    if (!has(parent, child)) 
+        throw ('cannot be parent')
+    Object.setPrototypeOf(child, parent)
+    if(!Object.keys(child).includes('functions')) 
+        child.functions = [];
+    // but what if a child funciton should override a parent function?
+    for(let func of parent.functions) {
+        let bound = func.bind(child)
+        child.functions.push(bound)
+    }    
+}
+
+let posNegHaver = {
+    neg: new intervals(true, -Infinity, 0, false),
+    pos: new intervals(false, 0, Infinity, true),
+    functions: [
+        // can't be arrow functions because those set static 'this' meaning
+        function(arg) { return arg === 'net' ? this.pos + this.neg : null },
+        function(arg) { return arg === 'greet' ? 'hello' : null }
+    ],
+    net: function(arg) { return arg === 'net' ? this.pos + this.neg : null }
+}
+
+let directions = {
+    neg: -1,
+    zero: 0,
+    pos: 3
+}
+
+if (has(posNegHaver, directions)) 
+    setParent(directions, posNegHaver)
+
+console.log(directions.functions[0]('net'))
 
 return 
-
-
-/*
-// 'this' should be bound to a world/room 
-function isContinedBy (other) {
-
-    if (other.members !== undefined)
-        return other.members(this);
-
-    let thisKeys = Object.keys(this);
-    let otherKeys = Object.keys(other);
-    
-    // If 'other' requires more properties than this even has,
-    // then this is certainly not a member of other
-    if (thisKeys.length < otherKeys.length)
-        return false
-
-    for(let key of otherKeys) {
-
-        thisVal = this[key]
-        otherVal = other[key]
-
-        if (key === 'id') 
-            continue 
-
-        if (thisVal === undefined)
-            return false
-        
-        // TODO: But they could both be functions, with one having a broader range than the other.
-        // We need it so that memberOf takes this into account.
-        if (typeof thisVal !== 'range' && typeof otherVal === 'range')
-            if (!thisVal)
-                return false
-            else 
-                continue
-        if(!eq(thisVal, otherVal))
-            return false          
-
-    }
-
-    return true
-
-}
-*/
 
 class room {
 
